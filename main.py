@@ -1,10 +1,18 @@
 from eventregistry import *
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+import openai
+import regex as re
+from youtube_transcript_api import YouTubeTranscriptApi
+
+
+openai.api_key = "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"
 
 er = EventRegistry(allowUseOfArchive=False,
                    apiKey='d14723a4-7ecc-48e0-9195-e1693735a9f2')
 
 
-def getNewsFromKeyword(keyword):
+def getNewsFromKeyword(keyword, max):
     qStr = f"""
     {{
         "$query": {{
@@ -34,10 +42,87 @@ def getNewsFromKeyword(keyword):
     """
     q = QueryArticlesIter.initWithComplexQuery(qStr)
     # change maxItems to get the number of results that you want
-    for idx, article in enumerate(q.execQuery(er, maxItems=100)):
-        # title = str(article['title']).strip()[:10]
-        with open("./csk/" + str(idx) + ".txt", 'w', encoding="UTF-8",) as f:
-            f.write(str(article))
+    return q.execQuery(er, max)
 
 
-getNewsFromKeyword("Chennai Super Kings")
+def getNewsFromLink(link):
+    analytics = Analytics(er)
+    response = analytics.extractArticleInfo(link)
+    return response
+
+
+def getSnapshot(link, path):
+    driver = webdriver.Chrome(ChromeDriverManager().install())
+    driver.get(link)
+    driver.save_screenshot(path)
+
+
+def generateSummary(text):
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt="You are an english news and video summarizer bot with the content given below and the summary of the content given above Generate a short summary in exactly 60 words no more no less. Use professional language and keep in mind this is used for Sentiment Analysis : \n" + text,
+        max_tokens=1000,
+        temperature=0.7,
+        top_p=1.0,
+        frequency_penalty=0.0,
+        presence_penalty=0.0,
+        n=1,
+        stop=None
+    )
+    summary = response.choices[0].text.strip()
+    return summary
+
+
+def extractVideoId(link):
+    regex = r"(?<=v=|v\/|vi=|vi\/|youtu.be\/|embed\/|\/v\/|\/e\/|watch\?v=|\?v=|\/embed\/|\/e\/|youtu.be\/|\/v\/|watch\?v=|embed\/)[^#\\?\\&]*"
+    match = re.search(regex, link)
+    if match:
+        return match.group(0)
+    else:
+        return None
+
+
+def getVideoTranscript(video_id):
+    try:
+        data = YouTubeTranscriptApi.get_transcript(video_id)
+        print(f"Transcript for video ID {video_id}:")
+        transcript = ""
+        for segment in data:
+            transcript += "\n" + segment['text']
+    except Exception as e:
+        print(f"Error occurred for video ID {video_id}: {str(e)}")
+
+    return transcript
+
+
+def getNewsSummary(body):
+    return generateSummary(body)
+
+
+def getNewsData(id, data, snapPath):
+    url = data.url
+    date = data.date
+    title = data.title
+    getSnapshot(url, snapPath)
+    body = data.body
+    summary = data.getNewsSummary(body)
+    sentimentScore = data.sentiment
+
+    return {id, url, date, title, summary, sentimentScore, snapPath}
+
+
+with open("./links.txt", "r") as file:
+    links = file.readlines()
+
+for idx, link in enumerate(links):
+    if link.__contains__("youtube"):
+        videoId = extractVideoId(link)
+        transcript = getVideoTranscript(videoId)
+        summary = generateSummary(transcript)
+        print(summary)
+    else:
+        news = getNewsFromLink(link)
+        # data = getNewsData(idx, news, snapPath="res.png")
+        # getSnapshot(link, path="res.png")
+        summary = generateSummary(news['body'])
+        print(summary)
