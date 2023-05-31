@@ -1,17 +1,15 @@
-from eventregistry import *
-from selenium import webdriver
-import openai
 import regex as re
+import openai
+
 from youtube_transcript_api import YouTubeTranscriptApi
-from Screenshot.Screenshot import Screenshot
-from PIL import Image
-from webdriver_manager.chrome import ChromeDriverManager
-from urllib.parse import urlencode
 from urllib.request import urlretrieve
 from yt_title import get_video_info
+from urllib.parse import urlencode
+from eventregistry import *
 from fpdf import FPDF
+from .config import api_key
 
-openai.api_key = "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"
+openai.api_key = api_key
 
 er = EventRegistry(allowUseOfArchive=False,
                    apiKey='d14723a4-7ecc-48e0-9195-e1693735a9f2')
@@ -117,7 +115,7 @@ def getNewsSummary(body):
 
 def getNewsData(id, data):
     url = data['url']
-    date = data['time']
+    date = data['date']
     title = data['title']
     filename = getSnapshot(url, id)
     body = data['body']
@@ -169,8 +167,7 @@ for idx, link in enumerate(links):
         summary = generateSummary(transcript)
         print(summary)
     else:
-        # news = getNewsFromLink(link)
-        # data = getNewsData(idx, news)
+        news = getNewsFromLink(link)
+        data = getNewsData(idx, news)
         generate_pdf(data['title'], data['summary'], data['url'], data['filename'])
-        # generate_pdf("asldjkfasf", "adslfma;lsdfa;lkdhfalksjdfaklsdbjf")
         print(data)
