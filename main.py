@@ -5,14 +5,18 @@ import regex as re
 from youtube_transcript_api import YouTubeTranscriptApi
 from Screenshot.Screenshot import Screenshot
 from PIL import Image
-from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.chrome import ChromeDriverManager
+from urllib.parse import urlencode
+from urllib.request import urlretrieve
+from yt_title import get_video_info
+from fpdf import FPDF
 
-
-openai.api_key = "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"
+openai.api_key = "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"
 
 er = EventRegistry(allowUseOfArchive=False,
                    apiKey='d14723a4-7ecc-48e0-9195-e1693735a9f2')
 
+data = {'url': 'https://www.ndtv.com/india-news/watch-srks-new-parliament-building-video-has-a-touch-of-swades-4072376', 'date': '04:03:17', 'title': "Watch: SRK's New Parliament Building Video Has A Touch Of 'Swades'", 'body': 'Shah Rukh Khan has given a voice-over in the video.\n\nNew Delhi:\n\nBollywood superstar Shah Rukh Khan tweeted the video of the new parliament building that will be inaugurated by Prime Minister Narendra Modi in a grand ceremony today.\n\nShah Rukh Khan has given a voice-over in the video, with the theme music of his film \'Swades\' playing in the background.\n\n"What a magnificent new home for the people who uphold our Constitution, represent every citizen of this great Nation and protect the diversity of her one people," Shah Rukh Khan said.\n\nWhat a magnificent new home for the people who uphold our Constitution, represent every citizen of this great Nation and protect the diversity of her one People @narendramodi ji.\n\nA new Parliament building for a New India but with the age old dream of Glory for India. Jai Hind!... pic.twitter.com/FjXFZwYk2T -- Shah Rukh Khan (@iamsrk)\n\nMay 27, 2023\n\n"A new Parliament building for a New India but with the age-old dream of Glory for India. Jai Hind!" he added.\n\nPromotedListen to the latest songs, only on JioSaavn.com\n\nPrime Minister Modi responded to Shah Rukh Khan\'s tweet and said he has "beautifully expressed" the message.\n\nBeautifully expressed!\n\nThe new Parliament building is a symbol of democratic strength and progress. It blends tradition with modernity. #MyParliamentMyPridehttps://t.co/Z1K1nyjA1X -- Narendra Modi (@narendramodi)\n\nMay 27, 2023\n\nSeveral Union Ministers including Home Minister Amit Shah, Finance Minister Nirmala Sitharaman, BJP leaders have tweeted the video of the new parliament building as well. Actor Akshay Kumar also tweeted the video, with a voice-over.\n\nProud to see this glorious new building of the Parliament. May this forever be an iconic symbol of India\'s growth story. #MyParliamentMyPridepic.twitter.com/vcXfkBL1Qs -- Akshay Kumar (@akshaykumar)\n\nMay 27, 2023\n\nThe parliament building will be inaugurated by Prime Minister Narendra Modi today in a ceremony which is expected to begin at around 7 in the morning with a havan. Several dignitaries, politicians and religious heads will be present at the event.\n\nOn the day of the historic event, Prime Minister Narendra Modi will also launch a Rs 75 coin and a stamp to commemorate the inauguration of the building.', 'summary': 'Bollywood superstar Shah Rukh Khan has given a voice-over for a video of the new Parliament building that will be inaugurated by Prime Minister Narendra Modi today. Several Union Ministers and BJP leaders have also tweeted the video with a voice-over. PM Modi has responded saying Shah Rukh has "beautifully expressed" the message. The Parliament building is a symbol of India\'s progress and blends tradition with modernity. It will be inaugurated with a havan and the launch of a Rs 75 coin and stamp.', 'filename': './ss/0.jpeg'}
 
 def getNewsFromKeyword(keyword, max):
     qStr = f"""
@@ -53,16 +57,16 @@ def getNewsFromLink(link):
     return response
 
 
-def getSnapshot(link, path):
-
-    driver = webdriver.Firefox()
-    driver.implicitly_wait(10)
-    driver.get(link)
-
-    def S(X): return driver.execute_script(
-        'return document.body.parentNode.scroll'+X)
-    driver.set_window_size(S('Width'), S('Height'))
-    driver.find_element(by="tag", value="body").screenshot_as_png("asdfa.png")
+def getSnapshot(link, id):
+    filename = "./ss/" + str(id) + ".jpeg"
+    print("taking snap")
+    params = urlencode(dict(access_key="99bfc0bf46404d9b98856a50ed23ae4a",
+                        url=link
+                        
+                        ))
+    urlretrieve("https://api.apiflash.com/v1/urltoimage?" + params, filename )
+    
+    return filename
 
 
 def generateSummary(text):
@@ -102,22 +106,58 @@ def getVideoTranscript(video_id):
 
     return transcript
 
+def getVideoTitle(video_id):
+    title = get_video_info(video_id)
+    return title
+
 
 def getNewsSummary(body):
     return generateSummary(body)
 
 
-def getNewsData(id, data, snapPath):
-    url = data.url
-    date = data.date
-    title = data.title
-    getSnapshot(url, snapPath)
-    body = data.body
-    summary = data.getNewsSummary(body)
-    sentimentScore = data.sentiment
+def getNewsData(id, data):
+    url = data['url']
+    date = data['time']
+    title = data['title']
+    filename = getSnapshot(url, id)
+    body = data['body']
+    summary = getNewsSummary(body)
 
-    return {id, url, date, title, summary, sentimentScore, snapPath}
+    return {
+        'url': url,
+        'date': date,
+        'title': title,
+        'body': body,
+        'summary': summary,
+        'filename': filename
+    }
 
+def generate_pdf(title, summary, link, filename):
+    print("HEHEHEHE", summary)
+    pdf = FPDF()
+    pdf.add_page()
+
+    pdf.set_font('Arial', 'B', 16)
+
+    pdf.cell(200, 10, "Title: " + title, align='L')
+
+    pdf.set_font('Arial', '', 12)
+    pdf.image(filename,  x=10, y=80, w=220, h=150 )
+    pdf.add_page()
+
+    pdf.set_font('Arial', 'B', 12)
+    pdf.multi_cell(150, 10,  "Summary: ")
+    pdf.set_font('Arial', '', 12)
+    pdf.multi_cell(150, 10,  summary)
+    
+    pdf.set_font('Arial', 'B', 12)
+    pdf.multi_cell(180, 5, "URL:")
+    pdf.set_font('Arial', '', 12)
+    pdf.multi_cell(180, 5, link)
+    pdf.set_margins(5, 5, 5)
+
+    # pdfname= title+'.pdf'
+    pdf.output("report.pdf")
 
 with open("./links.txt", "r") as file:
     links = file.readlines()
@@ -129,8 +169,8 @@ for idx, link in enumerate(links):
         summary = generateSummary(transcript)
         print(summary)
     else:
-        news = getNewsFromLink(link)
-        # data = getNewsData(idx, news, snapPath="res.png")
-        getSnapshot(link, path="res.png")
-        # summary = generateSummary(news['body'])
-        print(summary)
+        # news = getNewsFromLink(link)
+        # data = getNewsData(idx, news)
+        generate_pdf(data['title'], data['summary'], data['url'], data['filename'])
+        # generate_pdf("asldjkfasf", "adslfma;lsdfa;lkdhfalksjdfaklsdbjf")
+        print(data)
