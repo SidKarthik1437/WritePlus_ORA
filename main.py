@@ -1,12 +1,14 @@
 from eventregistry import *
 from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
 import openai
 import regex as re
 from youtube_transcript_api import YouTubeTranscriptApi
+from Screenshot.Screenshot import Screenshot
+from PIL import Image
+from webdriver_manager.firefox import GeckoDriverManager
 
 
-openai.api_key = "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"
+openai.api_key = "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"
 
 er = EventRegistry(allowUseOfArchive=False,
                    apiKey='d14723a4-7ecc-48e0-9195-e1693735a9f2')
@@ -52,9 +54,15 @@ def getNewsFromLink(link):
 
 
 def getSnapshot(link, path):
-    driver = webdriver.Chrome(ChromeDriverManager().install())
+
+    driver = webdriver.Firefox()
+    driver.implicitly_wait(10)
     driver.get(link)
-    driver.save_screenshot(path)
+
+    def S(X): return driver.execute_script(
+        'return document.body.parentNode.scroll'+X)
+    driver.set_window_size(S('Width'), S('Height'))
+    driver.find_element(by="tag", value="body").screenshot_as_png("asdfa.png")
 
 
 def generateSummary(text):
@@ -123,6 +131,6 @@ for idx, link in enumerate(links):
     else:
         news = getNewsFromLink(link)
         # data = getNewsData(idx, news, snapPath="res.png")
-        # getSnapshot(link, path="res.png")
-        summary = generateSummary(news['body'])
+        getSnapshot(link, path="res.png")
+        # summary = generateSummary(news['body'])
         print(summary)
