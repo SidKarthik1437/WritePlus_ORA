@@ -3,6 +3,7 @@ from googleapiclient.errors import HttpError
 import newspaper
 from docx import Document
 from docx.shared import Inches
+from textblob import TextBlob
 
 def is_biography_page(url):
     biography_keywords = ["wiki", "biography", "profile", "about", "tag", "topic"]
@@ -15,9 +16,9 @@ def is_biography_page(url):
 
 def is_socials(url):
     
-    socials = ['instagram', 'facebook']
+    socials = ['instagram', 'facebook', 'youtube', 'vimeo']
     for key in socials:
-        if key in url.split('/')[2].lower():
+        if key in url.lower():
             return True
         
     return False
@@ -34,6 +35,11 @@ def extract_news_content(url):
     print("News Fetched!")
     
     return {'title' :title, 'body':body, 'date':date}
+
+def get_sentiment_score(text):
+    blob = TextBlob(text)
+    sentiment_score = blob.sentiment.polarity
+    return sentiment_score
 
 def get_video_info(video_id, api_key):
     youtube = build('youtube', 'v3', developerKey=api_key)

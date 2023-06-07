@@ -82,20 +82,22 @@ def getSnapshot(link, id):
 def generateSummary(text):
     data = {}  # Initialize data as an empty dictionary
     prompt = str(text)
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": prompt},
-                {"role": "system", "content": "You are tasked with generating a summary of a given text in 120 words and calculating the \"sentiment polarity score\". Your goal is to provide the results in \"JSON\" format with only 2 keys: summary, polarity. Strictly include only the requested details. Remember to consider the overall sentiment of the text when determining the polarity score and give out the score in the scale -1 to 1."},
-            ]
-        )
-        if response.choices is not None:
-            data = json.loads(response.choices[0].message.content)
-            return data['summary'], data['polarity']
-    except:
-        generateSummary(prompt)
-    return None, None
+    
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "user", "content": prompt},
+            {"role": "system", "content": "You are tasked with generating a summary of a given text in 120 words. Strictly include only the requested details and do not use double quotes in the summary."},
+        ]
+    )
+    # data = response.choices[0].message.content[:(response.choices[0].message.content).find('}') + 1]
+    # print(data)
+    # data = json.loads(data)
+    # return data['summary'], data['polarity']
+    
+    return response.choices[0].message.content
+        
+    
 
 
 def extractVideoId(link):
@@ -129,35 +131,36 @@ def getNewsSummary(body):
     return generateSummary(body)
 
 def getSentiment(body):
-    # print("Analysing Sentiment...")
-    # senti = analytics.sentiment(body, method = "vocabulary")
-    # print(senti)
-    prompt = "give me sentiment polarity score for the given text in the range -1 to 1: \n" + str(body)
-    
+    print("Analysing Sentiment...")
+   
+    prompt =" Return only the sentiment polarity score for the text: \n"+ str(body)
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
+        messages=[
+             {"role": "system", "content": "You are tasked with generating sentiment polarity score for the given text in the scale -1 to 1. Return only the polarity score and if sentiment cannot be analysed return 0"}
+            ,{"role": "user", "content": prompt}
+                  ]
         
     )
-    print(response)
-    # summary = response.choices[0].message.content
-    # return summary
+    print(response.choices[0].message.content)
+    sentiment = response.choices[0].message.content
+    return sentiment
     
 
 def getNewsData(id, data, url):
     date = data['date']
     title = data['title']
-    body = data['body']
-    summary, sentiment = getNewsSummary(body)
-    # sentiment = getSentiment(body)
+    body = data['body'].decode('utf-8')
+    summary = getNewsSummary(body)
+    sentiment = helpers.get_sentiment_score(body)
     filename = getSnapshot(url, id)
 
     return {
         'date': date,
         'title': title,
         # 'body': body,
-        'summary': str(summary).encode('utf-8'),
-        'sentiment': str(sentiment).encode('utf-8'),
+        'summary': str(summary),
+        'sentiment': str(sentiment),
         'filename': filename
     }
 
@@ -200,7 +203,7 @@ def googleSearchResults(keyword):
     
     for res in search(keyword, num_results=50, lang='en'):
         
-        if not helpers.is_socials(res):
+        if helpers.is_socials(res) == False:
             if not helpers.is_biography_page(res):
                 search_results.append(res)
             
@@ -246,9 +249,7 @@ def main():
         
         
         
-        # print (data)
-    
-        
+        # print (data)        
 
 if __name__ == "__main__":
     main()
