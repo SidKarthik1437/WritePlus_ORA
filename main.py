@@ -3,18 +3,28 @@ import openai
 
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.request import urlretrieve
-from yt_title import get_video_info
+from helpers import get_video_info
 from urllib.parse import urlencode
+
+from serpapi import GoogleSearch
+from googlesearch import search
+
 from eventregistry import *
 from fpdf import FPDF
+
 import config
+import helpers
+import gs
+import json
+import streamlit as st
 
 openai.api_key = config.openAI
+GoogleSearch.SERP_API_KEY = config.serpAPI
 
 er = EventRegistry(allowUseOfArchive=False,
                    apiKey=config.newsAPI)
+analytics = Analytics(er)
 
-data = {'url': 'https://www.ndtv.com/india-news/watch-srks-new-parliament-building-video-has-a-touch-of-swades-4072376', 'date': '04:03:17', 'title': "Watch: SRK's New Parliament Building Video Has A Touch Of 'Swades'", 'body': 'Shah Rukh Khan has given a voice-over in the video.\n\nNew Delhi:\n\nBollywood superstar Shah Rukh Khan tweeted the video of the new parliament building that will be inaugurated by Prime Minister Narendra Modi in a grand ceremony today.\n\nShah Rukh Khan has given a voice-over in the video, with the theme music of his film \'Swades\' playing in the background.\n\n"What a magnificent new home for the people who uphold our Constitution, represent every citizen of this great Nation and protect the diversity of her one people," Shah Rukh Khan said.\n\nWhat a magnificent new home for the people who uphold our Constitution, represent every citizen of this great Nation and protect the diversity of her one People @narendramodi ji.\n\nA new Parliament building for a New India but with the age old dream of Glory for India. Jai Hind!... pic.twitter.com/FjXFZwYk2T -- Shah Rukh Khan (@iamsrk)\n\nMay 27, 2023\n\n"A new Parliament building for a New India but with the age-old dream of Glory for India. Jai Hind!" he added.\n\nPromotedListen to the latest songs, only on JioSaavn.com\n\nPrime Minister Modi responded to Shah Rukh Khan\'s tweet and said he has "beautifully expressed" the message.\n\nBeautifully expressed!\n\nThe new Parliament building is a symbol of democratic strength and progress. It blends tradition with modernity. #MyParliamentMyPridehttps://t.co/Z1K1nyjA1X -- Narendra Modi (@narendramodi)\n\nMay 27, 2023\n\nSeveral Union Ministers including Home Minister Amit Shah, Finance Minister Nirmala Sitharaman, BJP leaders have tweeted the video of the new parliament building as well. Actor Akshay Kumar also tweeted the video, with a voice-over.\n\nProud to see this glorious new building of the Parliament. May this forever be an iconic symbol of India\'s growth story. #MyParliamentMyPridepic.twitter.com/vcXfkBL1Qs -- Akshay Kumar (@akshaykumar)\n\nMay 27, 2023\n\nThe parliament building will be inaugurated by Prime Minister Narendra Modi today in a ceremony which is expected to begin at around 7 in the morning with a havan. Several dignitaries, politicians and religious heads will be present at the event.\n\nOn the day of the historic event, Prime Minister Narendra Modi will also launch a Rs 75 coin and a stamp to commemorate the inauguration of the building.', 'summary': 'Bollywood superstar Shah Rukh Khan has given a voice-over for a video of the new Parliament building that will be inaugurated by Prime Minister Narendra Modi today. Several Union Ministers and BJP leaders have also tweeted the video with a voice-over. PM Modi has responded saying Shah Rukh has "beautifully expressed" the message. The Parliament building is a symbol of India\'s progress and blends tradition with modernity. It will be inaugurated with a havan and the launch of a Rs 75 coin and stamp.', 'filename': './ss/0.jpeg'}
 
 def getNewsFromKeyword(keyword, max):
     qStr = f"""
@@ -50,8 +60,8 @@ def getNewsFromKeyword(keyword, max):
 
 
 def getNewsFromLink(link):
-    analytics = Analytics(er)
     response = analytics.extractArticleInfo(link)
+    print("News From Link FETCHED! ")
     return response
 
 
@@ -62,25 +72,30 @@ def getSnapshot(link, id):
                         url=link
                         
                         ))
-    urlretrieve("https://api.apiflash.com/v1/urltoimage?" + params, filename )
-    
+    try:
+        urlretrieve("https://api.apiflash.com/v1/urltoimage?" + params, filename )
+    except KeyboardInterrupt:
+        exit(0)
     return filename
 
 
 def generateSummary(text):
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt="You are an english news and video summarizer bot with the content given below and the summary of the content given above Generate a short summary in exactly 60 words no more no less. Use professional language and keep in mind this is used for Sentiment Analysis : \n" + text,
-        max_tokens=1000,
-        temperature=0.7,
-        top_p=1.0,
-        frequency_penalty=0.0,
-        presence_penalty=0.0,
-        n=1,
-        stop=None
-    )
-    summary = response.choices[0].text.strip()
-    return summary
+    data = {}  # Initialize data as an empty dictionary
+    prompt = str(text)
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "user", "content": prompt},
+                {"role": "system", "content": "You are tasked with generating a summary of a given text in 120 words and calculating the \"sentiment polarity score\". Your goal is to provide the results in \"JSON\" format with only 2 keys: summary, polarity. Strictly include only the requested details. Remember to consider the overall sentiment of the text when determining the polarity score and give out the score in the scale -1 to 1."},
+            ]
+        )
+        if response.choices is not None:
+            data = json.loads(response.choices[0].message.content)
+            return data['summary'], data['polarity']
+    except:
+        generateSummary(prompt)
+    return None, None
 
 
 def extractVideoId(link):
@@ -110,28 +125,45 @@ def getVideoTitle(video_id):
 
 
 def getNewsSummary(body):
+    print("Generating Summary...")
     return generateSummary(body)
 
+def getSentiment(body):
+    # print("Analysing Sentiment...")
+    # senti = analytics.sentiment(body, method = "vocabulary")
+    # print(senti)
+    prompt = "give me sentiment polarity score for the given text in the range -1 to 1: \n" + str(body)
+    
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}]
+        
+    )
+    print(response)
+    # summary = response.choices[0].message.content
+    # return summary
+    
 
-def getNewsData(id, data):
-    url = data['url']
+def getNewsData(id, data, url):
     date = data['date']
     title = data['title']
-    filename = getSnapshot(url, id)
     body = data['body']
-    summary = getNewsSummary(body)
+    summary, sentiment = getNewsSummary(body)
+    # sentiment = getSentiment(body)
+    filename = getSnapshot(url, id)
 
     return {
-        'url': url,
         'date': date,
         'title': title,
-        'body': body,
-        'summary': summary,
+        # 'body': body,
+        'summary': str(summary).encode('utf-8'),
+        'sentiment': str(sentiment).encode('utf-8'),
         'filename': filename
     }
 
-def generate_pdf(title, summary, link, filename):
-    print("HEHEHEHE", summary)
+def generate_pdf(id, title, summary, sentiment, link, filename):
+    # print("HEHEHEHE", summary)
+    print("Generating PDF for News: ", id)
     pdf = FPDF()
     pdf.add_page()
 
@@ -152,22 +184,72 @@ def generate_pdf(title, summary, link, filename):
     pdf.multi_cell(180, 5, "URL:")
     pdf.set_font('Arial', '', 12)
     pdf.multi_cell(180, 5, link)
+    pdf.set_font('Arial', 'B', 12)
+    pdf.multi_cell(180, 5, "Polarity Score:")
+    pdf.set_font('Arial', '', 12)
+    pdf.multi_cell(180, 5, sentiment)
     pdf.set_margins(5, 5, 5)
 
     # pdfname= title+'.pdf'
-    pdf.output("report.pdf")
+    pdf.output(f"./reports/{id}.pdf")
+    print("PDF ", id, " Generated!")
 
-with open("./links.txt", "r") as file:
-    links = file.readlines()
+def googleSearchResults(keyword):
+    
+    search_results = []
+    
+    for res in search(keyword, num_results=50, lang='en'):
+        
+        if not helpers.is_socials(res):
+            if not helpers.is_biography_page(res):
+                search_results.append(res)
+            
+    return search_results
 
-for idx, link in enumerate(links):
-    if link.__contains__("youtube"):
-        videoId = extractVideoId(link)
-        transcript = getVideoTranscript(videoId)
-        summary = generateSummary(transcript)
-        print(summary)
-    else:
-        news = getNewsFromLink(link)
-        data = getNewsData(idx, news)
-        generate_pdf(data['title'], data['summary'], data['url'], data['filename'])
-        print(data)
+def __init__():
+    print("init")
+    with open("./links.txt", "r") as file:
+        links = file.readlines()
+
+    for idx, link in enumerate(links):
+        if link.__contains__("youtube"):
+            videoId = extractVideoId(link)
+            transcript = getVideoTranscript(videoId)
+            summary = generateSummary(transcript)
+            print(summary)
+        else:
+            news = getNewsFromLink(link)
+            data = getNewsData(idx, news)
+            generate_pdf(data['title'], data['summary'], data['url'], data['filename'])
+            print(data)
+
+def main():
+    # st.title("ORA")
+    # keyword = str(input("Enter Search Keyword: "))
+    # keyword = st.text_input("Enter a keyword:")
+    
+    print("Fetching Google Search Results...")
+    res = gs.formatResults(gs.fetch_news_results("shah rukh khan", 100))
+    print("Total Links Found: ", len(res))
+
+    for id, news in enumerate(res):
+        print("Processing News: ", id)
+        try:
+            print("Fetching News From Link...")
+            res = helpers.extract_news_content(news)
+            
+            data = getNewsData(id, res, news)
+            print("News Data Fetched")
+            helpers.generate_docx(str(id), data['title'], data['summary'], data['sentiment'], news, data['filename'])
+        except KeyboardInterrupt:
+            exit(0)
+        
+        
+        
+        # print (data)
+    
+        
+
+if __name__ == "__main__":
+    main()
+    
