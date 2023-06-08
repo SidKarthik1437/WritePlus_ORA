@@ -50,10 +50,49 @@ def ChatSummarizer(body):
     chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
     
     res = chat(chat_prompt.format_prompt(text=body).to_messages()).json()
-    op = json.loads(json.loads(res)['content'])
     
+    try:
+        op = json.loads(json.loads(res)['content'])
+    except json.JSONDecodeError:
+        try:
+            op = json.loads(res)['content']
+            op = json.loads(op[:op.find('}') + 1])
+            return op['summary'], op['polarity']
+        except json.JSONDecodeError:
+            print(res)
+            return res, res
+        
     return op['summary'], op['polarity']
 
+def getSentiment(body):
+    
+    print("Analyzing Text...")
+    
+    template="""
+    You are a helpful assistant that gives the sentiment polarity in the scale -1 to 1 for {text}
+    Format the output as JSON with the following key:polarity:float.
+    """
+    
+    system_message_prompt = SystemMessagePromptTemplate.from_template(template)
+    human_template="{text}"
+    human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+    
+    chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
+    
+    res = chat(chat_prompt.format_prompt(text=body).to_messages()).json()
+    
+    try:
+        op = json.loads(json.loads(res)['content'])
+    except json.JSONDecodeError:
+        try:
+            op = json.loads(res)['content']
+            op = json.loads(op[:op.find('}') + 1])
+            return op['polarity']
+        except json.JSONDecodeError:
+            print(res)
+            return res
+        
+    return op['polarity']
 
 
 

@@ -5,13 +5,32 @@ from docx import Document
 from docx.shared import Inches
 from fpdf import FPDF
 from textblob import TextBlob
-import datetime
 from serpapi import GoogleSearch
+import regex as re
+import datetime
+from urllib.request import urlretrieve
+from urllib.parse import urlencode
+from youtube_transcript_api import YouTubeTranscriptApi
+
+import lang
 
 import config
 
+def getSnapshot(link, id):
+    filename = "./ss/" + str(id) + ".jpeg"
+    print("taking snap")
+    params = urlencode(dict(access_key=config.APIFLASH,
+                        url=link
+                        
+                        ))
+    try:
+        urlretrieve("https://api.apiflash.com/v1/urltoimage?" + params, filename )
+    except KeyboardInterrupt:
+        exit(0)
+    return filename
+
 def is_biography_page(url):
-    biography_keywords = ["wiki", "biography", "profile", "about", "tag", "topic"]
+    biography_keywords = ["wiki", "biography", "profile", "about", "tag", "topic", "videos"]
     
     for keyword in biography_keywords:
         if keyword in url.split('/')[3].lower():
@@ -21,7 +40,7 @@ def is_biography_page(url):
 
 def is_socials(url):
     
-    socials = ['instagram', 'facebook', 'youtube', 'vimeo', 'inhabitat.com', 'warwickonline']
+    socials = ['instagram', 'facebook', 'youtube', 'vimeo', 'inhabitat.com', 'warwickonline', 'amazon', 'flipkart']
     for key in socials:
         if key in url.lower():
             return True
@@ -31,21 +50,22 @@ def is_socials(url):
 def extract_news_content(url):
     
     try:
-        
         article = newspaper.Article(url)
         article.download()
         article.parse()
     except newspaper.ArticleException:
         print("cannot fetch news for the url: ", url)
-        return 
+        return "False"
     
     title = article.title.encode('utf-8')
     body = article.text.encode('utf-8')
-    date = article.publish_date
+    # date = article.publish_date
     
     print("News Fetched!")
     
-    return {'title' :title, 'body':body, 'date':date}
+    return {'title' :title, 'body':body,
+            # 'date':date
+            }
 
 def get_sentiment_score(text):
     blob = TextBlob(text)
@@ -75,7 +95,7 @@ def get_video_info(video_id):
     return None, None
 
 def getYoutubeLinks(keyword):
-    links = []
+    data = []
     params = {
             "api_key": config.serpAPI,
             "engine": "youtube",
@@ -88,13 +108,18 @@ def getYoutubeLinks(keyword):
     
     res = results.get('video_results')
     for i in res:
-        links.append(i.get('link'))
+        data.append({
+            'link': i.get('link'),
+            'title': i.get('title'),
+            'published': i.get('published_date'),
+            'thumbnail': i.get('thumbnail').get("static")
+        })
         
-    return links
+    return data[:5]
 
-def generate_docx(id, title, summary, sentiment, link, filename):
-    # Adding a paragraph
-    
+def generate_docx(category, id, title, summary, sentiment, link, filename):
+
+    id = str(category)+"_"+str(id)
     document = Document()
     
     document.add_paragraph(str(title))
@@ -103,6 +128,8 @@ def generate_docx(id, title, summary, sentiment, link, filename):
     document.add_paragraph(summary)
     document.add_paragraph(str(sentiment))
     document.save(f"./reports/{id}.docx")
+    
+
     
 def generate_pdf(id, title, summary, sentiment, link, filename):
     # print("HEHEHEHE", summary)
@@ -137,5 +164,27 @@ def generate_pdf(id, title, summary, sentiment, link, filename):
     pdf.output(f"./reports/{id}.pdf")
     print("PDF ", id, " Generated!")
 
-res = getYoutubeLinks("Apple")
-print(res)
+def extractVideoId(link):
+    regex = r"(?<=v=|v\/|vi=|vi\/|youtu.be\/|embed\/|\/v\/|\/e\/|watch\?v=|\?v=|\/embed\/|\/e\/|youtu.be\/|\/v\/|watch\?v=|embed\/)[^#\\?\\&]*"
+    match = re.search(regex, link)
+    if match:
+        return match.group(0)
+    else:
+        return None
+
+def getVideoTranscript(video_id):
+    try:
+        data = YouTubeTranscriptApi.get_transcript(video_id, languages=['en-GB', 'en'])
+        print(f"Transcript for video ID {video_id}:")
+        transcript = ""
+        for segment in data:
+            transcript += "\n" + segment['text']
+    except Exception as e:
+        print(f"Error occurred for video ID {video_id}: {str(e)}")
+
+    return transcript
+
+def getVideoTitle(video_id):
+    title = get_video_info(video_id)
+    return title
+
