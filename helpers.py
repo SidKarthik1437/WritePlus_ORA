@@ -3,6 +3,7 @@ from googleapiclient.errors import HttpError
 import newspaper
 from docx import Document
 from docx.shared import Inches
+from fpdf import FPDF
 from textblob import TextBlob
 
 def is_biography_page(url):
@@ -76,3 +77,36 @@ def generate_docx(id, title, summary, sentiment, link, filename):
     document.add_paragraph(summary)
     document.add_paragraph(str(sentiment))
     document.save(f"./reports/{id}.docx")
+    
+def generate_pdf(id, title, summary, sentiment, link, filename):
+    # print("HEHEHEHE", summary)
+    print("Generating PDF for News: ", id)
+    pdf = FPDF()
+    pdf.add_page()
+
+    pdf.set_font('Arial', 'B', 16)
+
+    pdf.cell(200, 10, "Title: " + title, align='L')
+
+    pdf.set_font('Arial', '', 12)
+    pdf.image(filename,  x=10, y=80, w=220, h=150 )
+    pdf.add_page()
+
+    pdf.set_font('Arial', 'B', 12)
+    pdf.multi_cell(150, 10,  "Summary: ")
+    pdf.set_font('Arial', '', 12)
+    pdf.multi_cell(150, 10,  summary)
+    
+    pdf.set_font('Arial', 'B', 12)
+    pdf.multi_cell(180, 5, "URL:")
+    pdf.set_font('Arial', '', 12)
+    pdf.multi_cell(180, 5, link)
+    pdf.set_font('Arial', 'B', 12)
+    pdf.multi_cell(180, 5, "Polarity Score:")
+    pdf.set_font('Arial', '', 12)
+    pdf.multi_cell(180, 5, sentiment)
+    pdf.set_margins(5, 5, 5)
+
+    # pdfname= title+'.pdf'
+    pdf.output(f"./reports/{id}.pdf")
+    print("PDF ", id, " Generated!")

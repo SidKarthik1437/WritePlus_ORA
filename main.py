@@ -10,11 +10,13 @@ from serpapi import GoogleSearch
 from googlesearch import search
 
 from eventregistry import *
-from fpdf import FPDF
+
 
 import config
 import helpers
 import gs
+import lang
+
 import json
 import streamlit as st
 
@@ -83,6 +85,7 @@ def generateSummary(text):
     data = {}  # Initialize data as an empty dictionary
     prompt = str(text)
     
+    
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -90,10 +93,8 @@ def generateSummary(text):
             {"role": "system", "content": "You are tasked with generating a summary of a given text in 120 words. Strictly include only the requested details and do not use double quotes in the summary."},
         ]
     )
-    # data = response.choices[0].message.content[:(response.choices[0].message.content).find('}') + 1]
-    # print(data)
-    # data = json.loads(data)
-    # return data['summary'], data['polarity']
+    
+   
     
     return response.choices[0].message.content
         
@@ -151,7 +152,7 @@ def getNewsData(id, data, url):
     date = data['date']
     title = data['title']
     body = data['body'].decode('utf-8')
-    summary = getNewsSummary(body)
+    summary = lang.Summarizer(body)
     sentiment = helpers.get_sentiment_score(body)
     filename = getSnapshot(url, id)
 
@@ -164,38 +165,6 @@ def getNewsData(id, data, url):
         'filename': filename
     }
 
-def generate_pdf(id, title, summary, sentiment, link, filename):
-    # print("HEHEHEHE", summary)
-    print("Generating PDF for News: ", id)
-    pdf = FPDF()
-    pdf.add_page()
-
-    pdf.set_font('Arial', 'B', 16)
-
-    pdf.cell(200, 10, "Title: " + title, align='L')
-
-    pdf.set_font('Arial', '', 12)
-    pdf.image(filename,  x=10, y=80, w=220, h=150 )
-    pdf.add_page()
-
-    pdf.set_font('Arial', 'B', 12)
-    pdf.multi_cell(150, 10,  "Summary: ")
-    pdf.set_font('Arial', '', 12)
-    pdf.multi_cell(150, 10,  summary)
-    
-    pdf.set_font('Arial', 'B', 12)
-    pdf.multi_cell(180, 5, "URL:")
-    pdf.set_font('Arial', '', 12)
-    pdf.multi_cell(180, 5, link)
-    pdf.set_font('Arial', 'B', 12)
-    pdf.multi_cell(180, 5, "Polarity Score:")
-    pdf.set_font('Arial', '', 12)
-    pdf.multi_cell(180, 5, sentiment)
-    pdf.set_margins(5, 5, 5)
-
-    # pdfname= title+'.pdf'
-    pdf.output(f"./reports/{id}.pdf")
-    print("PDF ", id, " Generated!")
 
 def googleSearchResults(keyword):
     
@@ -223,7 +192,7 @@ def __init__():
         else:
             news = getNewsFromLink(link)
             data = getNewsData(idx, news)
-            generate_pdf(data['title'], data['summary'], data['url'], data['filename'])
+            helpers.generate_docx(data['title'], data['summary'], data['url'], data['filename'])
             print(data)
 
 def main():
@@ -244,12 +213,12 @@ def main():
             data = getNewsData(id, res, news)
             print("News Data Fetched")
             helpers.generate_docx(str(id), data['title'], data['summary'], data['sentiment'], news, data['filename'])
+            
         except KeyboardInterrupt:
             exit(0)
         
         
-        
-        # print (data)        
+             
 
 if __name__ == "__main__":
     main()
