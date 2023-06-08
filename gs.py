@@ -6,7 +6,7 @@ def fetch_news_results(keyword, num_results):
     search_results = []
     
     # Perform the Google search
-    url = f"https://www.google.com/search?q={keyword}&tbm=nws&tbs=qdr:d"
+    url = f"https://www.google.com/search?q={keyword}&tbm=nws"
     response = requests.get(url)
     # print(response.content)
     

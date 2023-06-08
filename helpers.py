@@ -5,6 +5,10 @@ from docx import Document
 from docx.shared import Inches
 from fpdf import FPDF
 from textblob import TextBlob
+import datetime
+from serpapi import GoogleSearch
+
+import config
 
 def is_biography_page(url):
     biography_keywords = ["wiki", "biography", "profile", "about", "tag", "topic"]
@@ -17,7 +21,7 @@ def is_biography_page(url):
 
 def is_socials(url):
     
-    socials = ['instagram', 'facebook', 'youtube', 'vimeo']
+    socials = ['instagram', 'facebook', 'youtube', 'vimeo', 'inhabitat.com', 'warwickonline']
     for key in socials:
         if key in url.lower():
             return True
@@ -25,9 +29,15 @@ def is_socials(url):
     return False
 
 def extract_news_content(url):
-    article = newspaper.Article(url)
-    article.download()
-    article.parse()
+    
+    try:
+        
+        article = newspaper.Article(url)
+        article.download()
+        article.parse()
+    except newspaper.ArticleException:
+        print("cannot fetch news for the url: ", url)
+        return 
     
     title = article.title.encode('utf-8')
     body = article.text.encode('utf-8')
@@ -42,8 +52,8 @@ def get_sentiment_score(text):
     sentiment_score = blob.sentiment.polarity
     return sentiment_score
 
-def get_video_info(video_id, api_key):
-    youtube = build('youtube', 'v3', developerKey=api_key)
+def get_video_info(video_id):
+    youtube = build('youtube', 'v3', developerKey=config.youtubeAPI)
     
     try:
         response = youtube.videos().list(
@@ -64,7 +74,23 @@ def get_video_info(video_id, api_key):
 
     return None, None
 
-api_key = "AIzaSyBMpLFsUCmJI1dSW1YM2ZHEZ5JHYGsjRCM"
+def getYoutubeLinks(keyword):
+    links = []
+    params = {
+            "api_key": config.serpAPI,
+            "engine": "youtube",
+            "search_query": keyword,
+            "hl": "en",
+            "gl": "in"
+        }
+    search = GoogleSearch(params)
+    results = search.get_dict()
+    
+    res = results.get('video_results')
+    for i in res:
+        links.append(i.get('link'))
+        
+    return links
 
 def generate_docx(id, title, summary, sentiment, link, filename):
     # Adding a paragraph
@@ -110,3 +136,6 @@ def generate_pdf(id, title, summary, sentiment, link, filename):
     # pdfname= title+'.pdf'
     pdf.output(f"./reports/{id}.pdf")
     print("PDF ", id, " Generated!")
+
+res = getYoutubeLinks("Apple")
+print(res)

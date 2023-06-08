@@ -98,8 +98,6 @@ def generateSummary(text):
     
     return response.choices[0].message.content
         
-    
-
 
 def extractVideoId(link):
     regex = r"(?<=v=|v\/|vi=|vi\/|youtu.be\/|embed\/|\/v\/|\/e\/|watch\?v=|\?v=|\/embed\/|\/e\/|youtu.be\/|\/v\/|watch\?v=|embed\/)[^#\\?\\&]*"
@@ -152,8 +150,8 @@ def getNewsData(id, data, url):
     date = data['date']
     title = data['title']
     body = data['body'].decode('utf-8')
-    summary = lang.Summarizer(body)
-    sentiment = helpers.get_sentiment_score(body)
+    summary, sentiment = lang.ChatSummarizer(body)
+    # sentiment = helpers.get_sentiment_score(body)
     filename = getSnapshot(url, id)
 
     return {
@@ -200,8 +198,10 @@ def main():
     # keyword = str(input("Enter Search Keyword: "))
     # keyword = st.text_input("Enter a keyword:")
     
+    keyword = 'Kanva marketing fraud'
+    
     print("Fetching Google Search Results...")
-    res = gs.formatResults(gs.fetch_news_results("shah rukh khan", 100))
+    res = gs.formatResults(gs.fetch_news_results(keyword, 1000))
     print("Total Links Found: ", len(res))
 
     for id, news in enumerate(res):
