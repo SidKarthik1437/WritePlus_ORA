@@ -12,3 +12,12 @@ youtube-transcript-api
 regex
 openai
 eventregistry
+aiohttp
+numexpr
+pydantic
+PyYAML
+requests
+SQLAlchemy
+filelock
+tqdm
+python-docx
