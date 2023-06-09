@@ -1,0 +1,14 @@
+requests
+beautifulsoup4
+urllib3
+langchain
+google-api-python-client
+newspaper3k
+python-docx
+fpdf2
+textblob
+google-search-results
+youtube-transcript-api
+regex
+openai
+eventregistry
