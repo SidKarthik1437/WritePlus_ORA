@@ -33,45 +33,48 @@ def getNewsData(id, data, url):
     }
 
 def getYtData(id, data):
-    try:
-        videoId = extractVideoId(data.get('link'))
-        try:
-            transcript = getVideoTranscript(videoId)
-        except Exception as e:
-            print(f"Error occurred during Transcript extraction: {str(e)}")
-            summary = ""
-        try:
-            summary = Summarizer(transcript)
-            
-        except Exception as e:
-            print(f"Error occurred during summary generation: {str(e)}")
-            summary = ""
-        
-        try:
-            sentiment = getSentiment(summary)
-        except Exception as e:
-            print(f"Error occurred during sentiment analysis: {str(e)}")
-            sentiment = ""
-        
-        try:
-            filename = getSnapshot(data.get('link'), id)
-        except Exception as e:
-            print(f"Error occurred during snapshot retrieval: {str(e)}")
-            filename = ""
-        
-        return {
-            'type' : 'Y',
-            'title': data.get('title'),
-            'summary': str(summary),
-            'sentiment': str(sentiment),
-            'filename': filename,
-            'published': str(data.get('published'))
-        }
     
+    flag = 0
+    transcript = ""
+    videoId = extractVideoId(data.get('link'))
+    
+    try:
+        transcript = getVideoTranscript(videoId)
+        
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
-        return None
+        print(f"Cannot get transcript using title and description instead")
+        flag = 1
+        
+    try:
+        if transcript == "" and flag == 1:
+            summary = Summarizer(transcript)
+            sentiment = getSentiment(summary)
+        else: 
+            summary, sentiment = generateSSfromYTDescription(data.get('title'),data.get('description'))
+    except Exception as e:
+        print(e)    
+        summary = ""
+        sentiment = ""
+        
+        
+    try:
+        filename = getSnapshot(data.get('link'), id)
+    except Exception as e:
+        print(f"Error occurred during snapshot retrieval: {str(e)}")
+        filename = ""
+    
+    return {
+        'type' : 'Y',
+        'title': data.get('title'),
+        'summary': summary,
+        'sentiment': sentiment,
+        'filename': filename,
+        'published': str(data.get('published'))
+    }
 
+
+    
+    
 def googleSearchResults(keyword):
     
     search_results = []
@@ -85,6 +88,7 @@ def googleSearchResults(keyword):
     return search_results
 
 def News(keyword):
+    export = []
     print("Fetching Google Search Results...")
     res = googleSearchResults(keyword)
     print("Total Links Found: ", len(res))
@@ -97,34 +101,53 @@ def News(keyword):
             if not res == "False":
                 data = getNewsData(id, res, news)
                 print("News Data Fetched")
-                generate_docx(data['type'], str(id), data['title'], data['summary'], data['sentiment'], news, data['filename'])
+                # generate_docx(data['type'], str(id), data['title'], data['summary'], data['sentiment'], news, data['filename'])
+                export.append({'type': data['type'],'id': str(id),'title': data['title'],'summary': data['summary'],'sentiment': data['sentiment'],'link': news,'filename': data['filename']})
             else: continue
         except KeyboardInterrupt:
             exit(0)
+            
+    return export
 
 def Youtube(keyword):
+    yt = []
     print("Extracting Relavant Youtube Videos...")
     data = getYoutubeLinks(keyword)
     print("Total Youtube Links Found: ", len(data))
 
     for id, i in enumerate(data):
         print("Processing Youtube Video: ", id)
+        
         try:
             print("Fetching Youtube Data...")
             data = getYtData(id, i)
+            flag = 0
+            for key in ["video song", "music video", "full video", "lyric video", "song"]:
+                if key in i.get('title').lower():
+                    flag = 1
+                    break
+            if flag == 1:
+                continue
+                
+                
             print("Youtube Data Fetched")
             
-            generate_docx(data['type'], str(id), data['title'], data['summary'], data['sentiment'], i.get('link'), data['filename'])
+            yt.append({'type': data['type'],'id': str(id),'title': data['title'],'summary': data['summary'],'sentiment': data['sentiment'],'link': i.get('link'),'filename': data['filename']})
+            # generate_docx(data['type'], str(id), data['title'], data['summary'], data['sentiment'], i.get('link'), data['filename'])
                         
         except KeyboardInterrupt:
             exit(0)
+                
+    return yt
 
 
 def main():
     
-    keyword = 'Rahul Gandhi'
-    News(keyword)
-    Youtube(keyword)
+    keyword = 'narendra modi'
+    # news = News(keyword)
+    yt = Youtube(keyword)
+    
+    generateReport(yt, keyword)
     
         
 

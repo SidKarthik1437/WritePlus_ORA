@@ -1,4 +1,6 @@
-
+import openai
+import config
+openai.api_key = config.openAI
 def getNewsFromKeyword(keyword, max):
     qStr = f"""
     {{
@@ -38,18 +40,7 @@ def getNewsFromLink(link):
     return response
 
 
-def generateSummary(text):
-    data = {}  # Initialize data as an empty dictionary
-    prompt = str(text)
-    
-    
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "user", "content": prompt},
-            {"role": "system", "content": "You are tasked with generating a summary of a given text in 120 words. Strictly include only the requested details and do not use double quotes in the summary."},
-        ]
-    )
+
     
    
     
@@ -71,3 +62,43 @@ def getSentiment(body):
     print(response.choices[0].message.content)
     sentiment = response.choices[0].message.content
     return sentiment
+
+
+def generateSummary():
+    # data = {}  # Initialize data as an empty dictionary
+    prompt = """
+    """
+    
+    
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+         prompt = f"""You are a helpful assistant that gives the sentiment polarity by analyzing the title and description of the youtube video in the scale -1 to 1 with the reasoning for the given score.Format the output as JSON with the following keys:summary:string,polarity:float, reason:string.
+
+ignore chunks of text that contain the following:
+- social media links
+- shopping links
+- equipment information
+- copyrights
+- music used
+- sponsors
+- discount and offers
+
+use the given text:
+{prompt}
+""",
+
+        max_tokens=200,
+        temperature=0.0,
+        top_p=1.0,
+        frequency_penalty=0.0,
+        presence_penalty=0.0,
+        n=1,
+        stop=None
+        
+    )
+    
+    summary = response.choices[0].text.strip()
+    return summary
+
+
+print(generateSummary())
