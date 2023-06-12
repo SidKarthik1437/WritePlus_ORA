@@ -15,9 +15,22 @@ from youtube_transcript_api import YouTubeTranscriptApi
 import lang
 
 import config
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
-def getSnapshot(link, id):
-    filename = "./ss/" + str(id) + ".jpeg"
+
+data_wc = ""
+
+def wc(keyword,text):
+    wordcloud = WordCloud(background_color="white").generate(text)
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    plt.savefig(f'./wc/{keyword}.jpeg')
+
+
+def getSnapshot(link, id, type):
+    id = str(type)+"_"+str(id)
+    filename = "./ss/" + id + ".jpeg"
     print("taking snap")
     params = urlencode(dict(access_key=config.APIFLASH,
                         url=link
@@ -48,7 +61,7 @@ def is_socials(url):
     return False
 
 def extract_news_content(url):
-    
+    global data_wc
     try:
         article = newspaper.Article(url)
         article.download()
@@ -62,7 +75,7 @@ def extract_news_content(url):
     # date = article.publish_date
     
     print("News Fetched!")
-    
+    data_wc += body.decode('utf-8')
     return {'title' :title, 'body':body,
             # 'date':date
             }
@@ -132,7 +145,9 @@ def generate_docx(category, id, title, summary, sentiment, link, filename):
     
 def generateReport(data, keyword):
     document = Document()
+    global data_wc
     for i in data:
+        # if float(i['sentiment']) <= 0.0:
         print(i['summary'], i['sentiment'])
         i['id'] = str(i['type'])+"_"+str(i['id'])
         document.add_paragraph(str(i['title']))
@@ -141,7 +156,9 @@ def generateReport(data, keyword):
         document.add_paragraph(i['summary'])
         document.add_paragraph(str(i['sentiment']))
         document.add_page_break()
-    
+        # else: continue
+    wc(keyword, data_wc)
+    document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
     document.save(f"./reports/{keyword}.docx")
     
         
@@ -189,6 +206,7 @@ def extractVideoId(link):
         return None
 
 def getVideoTranscript(video_id):
+    global data_wc
     transcript = ""
     try:
         data = YouTubeTranscriptApi.get_transcript(video_id, languages=['en-GB', 'en', 'hindi', 'kannada', 'telugu', 'tamil', 'malayalam', 'bengali'])
@@ -198,6 +216,7 @@ def getVideoTranscript(video_id):
     except Exception as e:
         print(f"Error occurred for video ID {video_id}: {str(e)}")
 
+    data_wc += transcript
     return transcript
 
 def getVideoTitle(video_id):
@@ -205,6 +224,7 @@ def getVideoTitle(video_id):
     return title
 
 def getVideoDescription(video_id):
+    global data_wc
     youtube = build('youtube', 'v3', developerKey=config.youtubeAPI)
     
     try:
@@ -217,6 +237,7 @@ def getVideoDescription(video_id):
         if items:
             video_info = items[0]
             description = video_info['snippet']['description']
+            data_wc += description
             return description
 
     except HttpError as e:

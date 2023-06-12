@@ -1,5 +1,6 @@
-import regex as re
+# import regex as re
 import openai
+import streamlit as st
 
 from serpapi import GoogleSearch
 
@@ -19,14 +20,14 @@ def getNewsData(id, data, url):
     # date = data['date']
     title = data['title']
     body = data['body'].decode('utf-8')
-    summary = lang.Summarizer(body)
+    summary = Summarizer(body)
     sentiment = getSentiment(summary)
-    filename = getSnapshot(url, id)
+    filename = getSnapshot(url, id, 'N')
 
     return {
         'type': "N",
-        # 'date': date,
-        'title': title,
+        'body': body,
+        'title': title.decode("utf-8"),
         'summary': str(summary),
         'sentiment': str(sentiment),
         'filename': filename
@@ -46,19 +47,20 @@ def getYtData(id, data):
         flag = 1
         
     try:
-        if transcript == "" and flag == 1:
+        if not transcript == "" and flag == 0:
+            print("Analyzing Transcript")
             summary = Summarizer(transcript)
             sentiment = getSentiment(summary)
         else: 
             summary, sentiment = generateSSfromYTDescription(data.get('title'),data.get('description'))
     except Exception as e:
-        print(e)    
+        print("Summary and Sentiment ERROR!", e)    
         summary = ""
         sentiment = ""
         
         
     try:
-        filename = getSnapshot(data.get('link'), id)
+        filename = getSnapshot(data.get('link'), id, 'Y')
     except Exception as e:
         print(f"Error occurred during snapshot retrieval: {str(e)}")
         filename = ""
@@ -66,6 +68,7 @@ def getYtData(id, data):
     return {
         'type' : 'Y',
         'title': data.get('title'),
+        
         'summary': summary,
         'sentiment': sentiment,
         'filename': filename,
@@ -75,11 +78,11 @@ def getYtData(id, data):
 
     
     
-def googleSearchResults(keyword):
+def googleSearchResults(keyword, max):
     
     search_results = []
     
-    for res in formatResults(fetch_news_results(keyword, 20)):
+    for res in formatResults(fetch_news_results(keyword, max)):
         
         if is_socials(res) == False:
             if not is_biography_page(res):
@@ -87,10 +90,10 @@ def googleSearchResults(keyword):
             
     return search_results
 
-def News(keyword):
+def News(keyword, max):
     export = []
     print("Fetching Google Search Results...")
-    res = googleSearchResults(keyword)
+    res = googleSearchResults(keyword, max)
     print("Total Links Found: ", len(res))
 
     for id, news in enumerate(res):
@@ -143,14 +146,24 @@ def Youtube(keyword):
 
 def main():
     
-    keyword = 'narendra modi'
-    # news = News(keyword)
-    yt = Youtube(keyword)
+    flag = False
     
-    generateReport(yt, keyword)
+    st.title("ORAAAAAAAA")
+    keyword = st.text_input("Enter Keyword")
+    if st.button(label='Analyze!'):
+        news = News(keyword, 20)
+        # yt = Youtube(keyword)
+        # generateReport(news+yt, keyword)
+        generateReport(news, keyword)
+        flag = True
+    
+    if flag == True:
+        filename="./reports/"+keyword.lower()+".docx"
+        with open(filename, "rb") as fp:
+            st.download_button(label='Download Report', data=fp, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", file_name=f"{keyword}.docx")
     
         
-
 if __name__ == "__main__":
+    
     main()
     

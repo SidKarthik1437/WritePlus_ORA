@@ -100,33 +100,31 @@ def getSentiment(body):
 def generateSSfromYTDescription(title, description):
     print("Analyzing Title and Description...")
     
-    try:
-        response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=f"""You are a helpful assistant that gives the sentiment polarity by analyzing the {title} and {description} of the youtube video in the scale -1 to 1.Format the output as JSON with the following keys:summary:string,polarity:float.
+    if title=="" or description=="":
+        print("Not able to fetch title & description")
+    
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=f"""You are a helpful assistant that gives the sentiment polarity by analyzing the {title} and {description} of the youtube video in the scale -1 to 1.Format the output as JSON with the following keys:summary:string,polarity:float.
 
-    ignore chunks of text that contain the following:
-    - social media links
-    - shopping links
-    - equipment information
-    - copyrights
-    - music used
-    - sponsors
-    - discount and offers
-    - timestamps""",
-            max_tokens=1000,
-            temperature=0.0,
-            top_p=1.0,
-            frequency_penalty=0.0,
-            presence_penalty=0.0,
-            n=1,
-            stop=None
-        )
-    except:
-        summary = Summarizer(title + "\n" + description)
-        sentiment = getSentiment(summary)
-        
-        return summary, sentiment
+ignore chunks of text that contain the following:
+- social media links
+- shopping links
+- equipment information
+- copyrights
+- music used
+- sponsors
+- discount and offers
+- timestamps""",
+        max_tokens=1000,
+        temperature=0.0,
+        top_p=1.0,
+        frequency_penalty=0.0,
+        presence_penalty=0.0,
+        n=1,
+        stop=None
+    )
+
     
     res = response.choices[0].text.strip()
     res = str(res)
@@ -142,7 +140,9 @@ def generateSSfromYTDescription(title, description):
 
     data = json.loads(json_data)
 
-    summary = data["Summary"]
-    polarity = data["Polarity"]
+    summary = data['"summary"']
+    polarity = data['"polarity"']
+    
+    return summary, polarity
         
-    return summary,polarity
+    
