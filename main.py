@@ -148,13 +148,13 @@ def main():
     
     flag = False
     
-    st.title("ORAAAAAAAA")
+    st.title("📊 ONLINE REPUTATION ANALYSIS")
     keyword = st.text_input("Enter Keyword")
     if st.button(label='Analyze!'):
         news = News(keyword, 20)
-        # yt = Youtube(keyword)
-        # generateReport(news+yt, keyword)
-        generateReport(news, keyword)
+        yt = Youtube(keyword)
+        generateReport(news+yt, keyword)
+        # generateReport(news, keyword)
         flag = True
     
     if flag == True:

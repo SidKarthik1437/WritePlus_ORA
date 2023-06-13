@@ -1,3 +1,5 @@
 config.py
 /ss
 /reports
+/wc
+/__pycache__

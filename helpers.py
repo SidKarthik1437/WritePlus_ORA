@@ -7,7 +7,6 @@ from fpdf import FPDF
 from textblob import TextBlob
 from serpapi import GoogleSearch
 import regex as re
-import datetime
 from urllib.request import urlretrieve
 from urllib.parse import urlencode
 from youtube_transcript_api import YouTubeTranscriptApi
