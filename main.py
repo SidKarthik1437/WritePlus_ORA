@@ -114,11 +114,11 @@ def News(keyword, max):
                 
         return export
 
-def Youtube(keyword, max):
+def Youtube(keyword, max, loc):
     with st.spinner('Analyzing Videos'):
         yt = []
         print("Extracting Relavant Youtube Videos...")
-        data = getYoutubeLinks(keyword, max)
+        data = getYoutubeLinks(keyword, max, loc)
         print("Total Youtube Links Found: ", len(data))
 
         for id, i in enumerate(data):
@@ -156,14 +156,24 @@ def chartGen(data):
 def main():
     
     flag = False
+    with open('./gl.json', 'r') as file:
+        loc_data = json.load(file)
+        
+    loc = [i['country_name'] for i in loc_data]
+    
+    
     st.set_page_config(page_title="Online Reputation Analysis", page_icon="📊")
     
     st.title("📊 ONLINE REPUTATION ANALYSIS")
     keyword = st.text_input("Enter Keyword", help="Enter the prospect of interest")
     filename="./reports/"+keyword.lower()+".docx"
-    max_news = st.number_input("Enter Max no of article search results to fetch", value=50 ,step=1,  min_value=10, max_value= 1000, help="More the value greater the time it takes. \n Note: These results will be filtered.")
-    max_videos = st.number_input("Enter Max no of youtube search results to fetch",value=10, step=1,  max_value= 100, help="More the value greater the time it takes.")
-    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        max_news = st.number_input("Max Articles", value=50 ,step=1,  min_value=10, max_value= 1000, help="More the value greater the time it takes. \n Note: These results will be filtered.")
+    with col2:
+        max_videos = st.number_input("Max Videos",value=10, step=1,  max_value= 100, help="More the value greater the time it takes.")
+    with col3:    
+        loc = st.selectbox("Location", options=loc,help="country of search", index=98 )
     # if not os.path.exists(filename):
 
     
@@ -173,7 +183,7 @@ def main():
         bar.progress(10, "Analyzing News...")
         news = News(keyword, max_news)
         bar.progress(50, "Analyzing Youtube Videos")
-        yt = Youtube(keyword, max_videos)
+        yt = Youtube(keyword, max_videos, loc)
         bar.progress(90, "Generating Report")
         data = news+yt
         

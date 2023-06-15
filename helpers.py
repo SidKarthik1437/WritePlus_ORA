@@ -11,7 +11,7 @@ from urllib.request import urlretrieve
 from urllib.parse import urlencode
 from youtube_transcript_api import YouTubeTranscriptApi
 
-import lang
+import json
 
 import config
 from wordcloud import WordCloud
@@ -106,14 +106,19 @@ def get_video_info(video_id):
 
     return None, None
 
-def getYoutubeLinks(keyword, max):
+def getYoutubeLinks(keyword, max, loc):
     data = []
+    with open('./gl.json', 'r') as file:
+       loc_data =  json.load(file)
+    loc = [i['country_code'] for i in loc_data if i['country_name'] == loc][0]
     params = {
             "api_key": config.serpAPI,
             "engine": "youtube",
             "search_query": keyword,
             "hl": "en",
-            "gl": "in"
+            "gl": loc,
+            # 'location': loc
+            
         }
     search = GoogleSearch(params)
     results = search.get_dict()
