@@ -27,8 +27,8 @@ def wc(keyword,text):
     plt.savefig(f'./wc/{keyword}.jpeg')
 
 
-def getSnapshot(link, id, type):
-    id = str(type)+"_"+str(id)
+def getSnapshot(link, id, type, keyword):
+    id = str(keyword)+"_"+str(type)+"_"+str(id)
     filename = "./ss/" + id + ".jpeg"
     print("taking snap")
     params = urlencode(dict(access_key=config.APIFLASH,
@@ -52,7 +52,7 @@ def is_biography_page(url):
 
 def is_socials(url):
     
-    socials = ['instagram', 'facebook', 'youtube', 'vimeo', 'inhabitat.com', 'warwickonline', 'amazon', 'flipkart']
+    socials = ['instagram', 'facebook', 'youtube', 'vimeo', 'inhabitat.com', 'warwickonline', 'amazon', 'flipkart', 'webstories']
     for key in socials:
         if key in url.lower():
             return True
@@ -106,7 +106,7 @@ def get_video_info(video_id):
 
     return None, None
 
-def getYoutubeLinks(keyword):
+def getYoutubeLinks(keyword, max):
     data = []
     params = {
             "api_key": config.serpAPI,
@@ -128,7 +128,7 @@ def getYoutubeLinks(keyword):
             'thumbnail': i.get('thumbnail').get("static")
         })
         
-    return data[:5]
+    return data[:max]
 
 def generate_docx(category, id, title, summary, sentiment, link, filename):
 
@@ -159,9 +159,6 @@ def generateReport(data, keyword):
     wc(keyword, data_wc)
     document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
     document.save(f"./reports/{keyword}.docx")
-    
-        
-    
     
 def generate_pdf(id, title, summary, sentiment, link, filename):
     # print("HEHEHEHE", summary)
@@ -223,6 +220,7 @@ def getVideoTitle(video_id):
     return title
 
 def getVideoDescription(video_id):
+
     global data_wc
     youtube = build('youtube', 'v3', developerKey=config.youtubeAPI)
     
@@ -243,3 +241,19 @@ def getVideoDescription(video_id):
         print(f'Error retrieving video info for video ID {video_id}: {e}')
 
     return None, None
+
+from langchain.indexes import VectorstoreIndexCreator
+from langchain.text_splitter import CharacterTextSplitter
+
+def cb(body):
+    text_splitter = CharacterTextSplitter()
+
+    texts = text_splitter.split_text()
+
+    docs = [Document(page_content=t) for t in texts[:3]]
+
+    index = VectorstoreIndexCreator().from_loaders([docs])
+
+    query = "What is the document about?"
+    print(index.query(query))
+    

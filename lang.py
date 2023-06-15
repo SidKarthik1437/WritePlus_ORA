@@ -3,7 +3,7 @@ import os
 import json
 os.environ['OPENAI_API_KEY'] = config.openAI
 import openai
-
+import re
 from langchain import OpenAI
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.chains.summarize import load_summarize_chain
@@ -25,6 +25,12 @@ llm = OpenAI(temperature=1)
 chat = ChatOpenAI(temperature=0)
 
 text_splitter = CharacterTextSplitter()
+
+def extract_numbers(string):
+    pattern = r'-?\d+\.\d+'
+    matches = re.findall(pattern, string)
+    return matches
+
 
 def Summarizer(body):
     texts = text_splitter.split_text(body)
@@ -61,7 +67,7 @@ def ChatSummarizer(body):
             return op['summary'], op['polarity']
         except json.JSONDecodeError:
             print(res)
-            return res, res
+            return res['content'], res['polarity']
         
     return op['summary'], op['polarity']
 
@@ -87,14 +93,14 @@ def getSentiment(body):
     except json.JSONDecodeError:
         try:
             op = json.loads(res)['content']
-            op = json.loads(op[:op.find('}') + 1])
+            op = json.loads(op[op.find('{'):op.find('}') + 1])
             return op['polarity']
         except json.JSONDecodeError:
-            print(res)
-            return res
+            newres = extract_numbers(json.loads(res)['content'])
+            # print(newres)
+            return newres
         
     return op['polarity']
-
 
 
 def generateSSfromYTDescription(title, description):
@@ -145,4 +151,6 @@ ignore chunks of text that contain the following:
     
     return summary, polarity
         
-    
+# res = getSentiment("House Minority Leader Jeffries made an extreme accusation that Democrats had saved America from a right-wing plot to crash the economy, prompting Elon Musk to ask what Republicans were doing to crash the economy; Jeffries did not respond, sparking a public conversation on Twitter.")
+# print(res)
+
