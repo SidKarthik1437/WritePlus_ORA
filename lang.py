@@ -1,7 +1,8 @@
 import config
 import os
 import json
-os.environ['OPENAI_API_KEY'] = config.openAI
+import streamlit as st
+os.environ['OPENAI_API_KEY'] = st.secrets('openAI')
 import openai
 import re
 from langchain import OpenAI

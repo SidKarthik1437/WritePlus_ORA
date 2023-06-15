@@ -12,7 +12,7 @@ from urllib.parse import urlencode
 from youtube_transcript_api import YouTubeTranscriptApi
 
 import json
-
+import streamlit as st
 import config
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
@@ -31,7 +31,7 @@ def getSnapshot(link, id, type, keyword):
     id = str(keyword)+"_"+str(type)+"_"+str(id)
     filename = "./ss/" + id + ".jpeg"
     print("taking snap")
-    params = urlencode(dict(access_key=config.APIFLASH,
+    params = urlencode(dict(access_key=st.secrets('APIFLASH'),
                         url=link
                         
                         ))
@@ -85,7 +85,7 @@ def get_sentiment_score(text):
     return sentiment_score
 
 def get_video_info(video_id):
-    youtube = build('youtube', 'v3', developerKey=config.youtubeAPI)
+    youtube = build('youtube', 'v3', developerKey=st.secrets('youtubeAPI'))
     
     try:
         response = youtube.videos().list(
@@ -112,7 +112,7 @@ def getYoutubeLinks(keyword, max, loc):
        loc_data =  json.load(file)
     loc = [i['country_code'] for i in loc_data if i['country_name'] == loc][0]
     params = {
-            "api_key": config.serpAPI,
+            "api_key": st.secrets('serpAPI'),
             "engine": "youtube",
             "search_query": keyword,
             "hl": "en",
@@ -227,7 +227,7 @@ def getVideoTitle(video_id):
 def getVideoDescription(video_id):
 
     global data_wc
-    youtube = build('youtube', 'v3', developerKey=config.youtubeAPI)
+    youtube = build('youtube', 'v3', developerKey=st.secrets('youtubeAPI'))
     
     try:
         response = youtube.videos().list(
