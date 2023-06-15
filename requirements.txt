@@ -21,3 +21,5 @@ SQLAlchemy
 filelock
 tqdm
 python-docx
+plotly
+tiktoken
