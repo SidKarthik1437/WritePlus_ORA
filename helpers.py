@@ -45,14 +45,14 @@ def is_biography_page(url):
     biography_keywords = ["wiki", "biography", "profile", "about", "tag", "topic", "videos"]
     
     for keyword in biography_keywords:
-        if keyword in url.split('/')[3].lower():
+        if keyword in url.lower():
             return True
     
     return False
 
 def is_socials(url):
     
-    socials = ['instagram', 'facebook', 'youtube', 'vimeo', 'inhabitat.com', 'warwickonline', 'amazon', 'flipkart', 'webstories']
+    socials = ['instagram', 'facebook', 'youtube', 'vimeo', 'inhabitat.com', 'warwickonline', 'amazon', 'flipkart', 'webstories', 'canivera']
     for key in socials:
         if key in url.lower():
             return True
@@ -155,7 +155,7 @@ def generateReport(data, keyword):
         print(i['summary'], i['sentiment'])
         i['id'] = str(i['type'])+"_"+str(i['id'])
         document.add_paragraph(str(i['title']))
-        document.add_picture(i['filename'], width=Inches(7), height=Inches(5))
+        # document.add_picture(i['filename'], width=Inches(7), height=Inches(5))
         document.add_paragraph(i['link'])
         document.add_paragraph(i['summary'])
         document.add_paragraph(str(i['sentiment']))

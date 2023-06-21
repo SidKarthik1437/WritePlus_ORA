@@ -12,6 +12,7 @@ import config
 from helpers import *
 from gs import *
 from lang import *
+import snap
 
 openai.api_key = config.openAI
 GoogleSearch.SERP_API_KEY = config.serpAPI
@@ -23,7 +24,7 @@ def getNewsData(id, data, url, keyword):
     body = data['body'].decode('utf-8')
     summary = Summarizer(body)
     sentiment = getSentiment(summary)
-    filename = getSnapshot(url, id, 'N', keyword)
+    filename = snap.getSnapshot(url, id, 'N', keyword)
 
     return {
         'type': "N",
@@ -61,7 +62,7 @@ def getYtData(id, data, keyword):
         
         
     try:
-        filename = getSnapshot(data.get('link'), id, 'Y', keyword)
+        filename = snap.getSnapshot(data.get('link'), id, 'Y', keyword)
     except Exception as e:
         print(f"Error occurred during snapshot retrieval: {str(e)}")
         filename = ""
@@ -79,25 +80,23 @@ def getYtData(id, data, keyword):
 
     
     
-# def googleSearchResults(keyword, max):
+def googleSearchResults(keyword, loc, max):
     
-    # search_results = []
+    search_results = []
     
-    # for res in formatResults(fetch_news_results(keyword, max)):
+    for res in extendedResults(keyword, loc, max):
         
-        # if is_socials(res) == False:
-        #     if not is_biography_page(res):
-        #         search_results.append(res)
+        if is_socials(res) == False:
+            if is_biography_page(res) == False:
+                search_results.append(res)
         # search_results.append(res)
             
-    # return search_results
+    return search_results
 
 def News(keyword, loc, max):
-    with st.spinner("Analyzing News..."):
         export = []
         print("Fetching Google Search Results...")
-        # res = googleSearchResults(keyword, max)
-        res = extendedResults(keyword, loc, max)
+        res = googleSearchResults(keyword, loc, max)
         print("Total Links Found: ", len(res))
 
         for id, news in enumerate(res):
@@ -109,7 +108,9 @@ def News(keyword, loc, max):
                     data = getNewsData(id, res, news, keyword)
                     print("News Data Fetched")
                     # generate_docx(data['type'], str(id), data['title'], data['summary'], data['sentiment'], news, data['filename'])
-                    export.append({'type': data['type'],'id': str(id),'title': data['title'],'summary': data['summary'],'sentiment': data['sentiment'],'link': news,'filename': data['filename']})
+                    export.append({'type': data['type'],'id': str(id),'title': data['title'],'summary': data['summary'],'sentiment': data['sentiment'],'link': news,
+                    'filename': data['filename']
+                    })
                 else: continue
             except KeyboardInterrupt:
                 exit(0)
@@ -140,7 +141,9 @@ def Youtube(keyword, max, loc):
                     
                 print("Youtube Data Fetched")
                 
-                yt.append({'type': data['type'],'id': str(id),'title': data['title'],'summary': data['summary'],'sentiment': data['sentiment'],'link': i.get('link'),'filename': data['filename']})
+                yt.append({'type': data['type'],'id': str(id),'title': data['title'],'summary': data['summary'],'sentiment': data['sentiment'],'link': i.get('link'),
+                'filename': data['filename']
+                })
                 # generate_docx(data['type'], str(id), data['title'], data['summary'], data['sentiment'], i.get('link'), data['filename'])
                             
             except KeyboardInterrupt:
@@ -220,7 +223,37 @@ def main():
         with open(filename, "rb") as fp:
             st.download_button(label='Download Report', data=fp, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", file_name=f"{keyword}.docx")
 
-if __name__ == "__main__":
+def newmain():
+    with open('./gl.json', 'r') as file:
+        loc_data = json.load(file)
+        
+    loc = [i['country_name'] for i in loc_data]
     
-    main()
+    keyword = input("Enter keyword: ")
+    loc = "India"
+    max_news = 500
+    max_videos = 100
+    
+    
+    # filename="./reports/"+keyword.lower()+".docx"
+
+    
+            
+    loc = [country['country_code'] for idx, country in enumerate(loc_data) if country['country_name'] == loc][0]
+    news = News(keyword, loc, max_news)
+    yt = Youtube(keyword, max_videos, loc)
+    data = news+yt
+        
+        # with open("data.json", "w") as f:
+        #     f.write(data)
+        
+    generateReport(data, keyword)
+    # else: flag = True
+    
+    
+    
+
+if __name__ == "__main__":
+    newmain()
+    # main()
     
