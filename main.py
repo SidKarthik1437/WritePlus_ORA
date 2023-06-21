@@ -8,13 +8,13 @@ from eventregistry import *
 import plotly.figure_factory as ff
 import plotly.express as px
 
-# import config
+import config
 from helpers import *
 from gs import *
 from lang import *
 
-openai.api_key = st.secrets('openAI')
-GoogleSearch.SERP_API_KEY = st.secrets('serpAPI')
+openai.api_key = config.openAI
+GoogleSearch.SERP_API_KEY = config.serpAPI
 
 
 def getNewsData(id, data, url, keyword):
@@ -85,9 +85,10 @@ def googleSearchResults(keyword, max):
     
     for res in formatResults(fetch_news_results(keyword, max)):
         
-        if is_socials(res) == False:
-            if not is_biography_page(res):
-                search_results.append(res)
+        # if is_socials(res) == False:
+        #     if not is_biography_page(res):
+        #         search_results.append(res)
+        search_results.append(res)
             
     return search_results
 

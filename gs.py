@@ -6,7 +6,7 @@ def fetch_news_results(keyword, num_results):
     search_results = []
     
     # Perform the Google search
-    url = f"https://www.google.com/search?q={keyword}&tbm=nws"
+    url = f"https://www.google.com/search?q={keyword}"
     response = requests.get(url)
     # print(response.content)
     
@@ -18,7 +18,7 @@ def fetch_news_results(keyword, num_results):
     for link in links[:num_results]:
         url = link["href"]
         search_results.append(url)
-    
+    print(len(search_results))
     return search_results
 
 # Example usage

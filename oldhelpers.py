@@ -1,7 +1,7 @@
 import openai
 import config
 import streamlit as st
-openai.api_key = st.secrets('openAI')
+openai.api_key = config.openAI
 def getNewsFromKeyword(keyword, max):
     qStr = f"""
     {{
