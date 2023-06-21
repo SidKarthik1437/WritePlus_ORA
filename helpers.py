@@ -52,7 +52,7 @@ def is_biography_page(url):
 
 def is_socials(url):
     
-    socials = ['instagram', 'facebook', 'youtube', 'vimeo', 'inhabitat.com', 'warwickonline', 'amazon', 'flipkart', 'webstories', 'canivera']
+    socials = ['instagram', 'facebook', 'youtube', 'vimeo', 'inhabitat.com', 'warwickonline', 'amazon', 'flipkart', 'webstories', 'canivera', 'tamil.asianet']
     for key in socials:
         if key in url.lower():
             return True
