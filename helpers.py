@@ -108,9 +108,9 @@ def get_video_info(video_id):
 
 def getYoutubeLinks(keyword, max, loc):
     data = []
-    with open('./gl.json', 'r') as file:
-       loc_data =  json.load(file)
-    loc = [i['country_code'] for i in loc_data if i['country_name'] == loc][0]
+    # with open('./gl.json', 'r') as file:
+    #    loc_data =  json.load(file)
+    # loc = [i['country_code'] for i in loc_data if i['country_name'] == loc][0]
     params = {
             "api_key": config.serpAPI,
             "engine": "youtube",

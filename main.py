@@ -79,24 +79,25 @@ def getYtData(id, data, keyword):
 
     
     
-def googleSearchResults(keyword, max):
+# def googleSearchResults(keyword, max):
     
-    search_results = []
+    # search_results = []
     
-    for res in formatResults(fetch_news_results(keyword, max)):
+    # for res in formatResults(fetch_news_results(keyword, max)):
         
         # if is_socials(res) == False:
         #     if not is_biography_page(res):
         #         search_results.append(res)
-        search_results.append(res)
+        # search_results.append(res)
             
-    return search_results
+    # return search_results
 
-def News(keyword, max):
+def News(keyword, loc, max):
     with st.spinner("Analyzing News..."):
         export = []
         print("Fetching Google Search Results...")
-        res = googleSearchResults(keyword, max)
+        # res = googleSearchResults(keyword, max)
+        res = extendedResults(keyword, loc, max)
         print("Total Links Found: ", len(res))
 
         for id, news in enumerate(res):
@@ -148,7 +149,7 @@ def Youtube(keyword, max, loc):
         return yt
 
 import time
-import numpy as np
+# import numpy as np
 import pandas as pd
 def chartGen(data):
     fig = px.bar(data, x="id", y="sentiment", title="Polarity Graph")
@@ -181,8 +182,10 @@ def main():
     if st.button(label='Analyze!'):
             
         bar = st.progress(0, "Searching the internet")
+        time.sleep(1)
+        loc = [country['country_code'] for idx, country in enumerate(loc_data) if country['country_name'] == loc][0]
         bar.progress(10, "Analyzing News...")
-        news = News(keyword, max_news)
+        news = News(keyword, loc, max_news)
         bar.progress(50, "Analyzing Youtube Videos")
         yt = Youtube(keyword, max_videos, loc)
         bar.progress(90, "Generating Report")

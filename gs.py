@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
+import config
+from serpapi import GoogleSearch
 
 def fetch_news_results(keyword, num_results):
     search_results = []
@@ -21,9 +23,6 @@ def fetch_news_results(keyword, num_results):
     print(len(search_results))
     return search_results
 
-# Example usage
-
-# Print the search results
 def formatResults(results):
     res = []
     for i, result in enumerate(results):
@@ -38,5 +37,31 @@ def formatResults(results):
                     res.append(link)
     return res
 
-# https://indianexpress.com/article/trending/trending-in-india/man-who-lives-in-jharkhand-is-a-shah-rukh-khan-doppelganger-from-earlier-days-8648722/
-# https://indianexpress.com/article/trending/trending-in-india/man-who-lives-in-jharkhand-is-a-shah-rukh-khan-doppelganger-from-earlier-days-8648722/&sa=U&ved=2ahUKEwi8xNje1bD_AhUEH7kGHaVjC6YQxfQBegQIBhAC&usg=AOvVaw00JFLC86KwWjVu7EV5qqTD
+negative_words=['Review','Fraud','Scam','Cheat','Jail', 'Complaint', 'Scandal', 'Complaints', 'Accused', 'Cheater', 'Prosecuted', 'Ban', 'Banned', 'Arrest', 'Forgery']
+
+def extendedResults(keyword, country, num_results):
+    res = []
+    print(country)
+    for word in negative_words:
+
+        params = keyword + " " + word
+        print("-------------------" + params + "-------------------", end="\n")
+        params = {
+        "api_key": config.serpAPI,
+        "engine": "google",
+        "q": params,
+        "google_domain": "google.com",
+        "gl": country,
+        "hl": "en",
+        "num": num_results
+        }
+
+        search = GoogleSearch(params)
+        results = search.get_dict()
+        # print(results)
+        for i in results['organic_results']:
+            print(i['link'])
+            res.append(i['link'])
+
+    return res
+
