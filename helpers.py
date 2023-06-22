@@ -151,7 +151,8 @@ def generate_docx(data, keyword):
     # for i in data:
         # print(i)
         # print(type(i))
-    if float(data['sentiment']) <= 0.0:
+    sentiment_value = data['sentiment']
+    if sentiment_value and float(sentiment_value) <= 0.0:
         print(data['summary'], data['sentiment'])
         data['id'] = str(data['type'])+"_"+str(data['id'])
         document.add_paragraph(str(data['title']))
@@ -168,7 +169,8 @@ def generateReport(data, keyword):
     document = Document()
     global data_wc
     for i in data:
-        if float(i['sentiment']) <= 0.0:
+        sentiment_value = i['sentiment']
+        if sentiment_value and float(sentiment_value) <= 0.0:
             print(i['summary'], i['sentiment'])
             i['id'] = str(i['type'])+"_"+str(i['id'])
             document.add_paragraph(str(i['title']))
