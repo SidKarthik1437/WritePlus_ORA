@@ -58,7 +58,7 @@ def extendedResults(keyword, country, num_results):
 
         search = GoogleSearch(params)
         results = search.get_dict()
-        # print(results)
+        # print(results.get('organic_results'))
         for i in results['organic_results']:
             print(i['link'])
             res.append(i['link'])

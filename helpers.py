@@ -52,7 +52,7 @@ def is_biography_page(url):
 
 def is_socials(url):
     
-    socials = ['instagram', 'facebook', 'youtube', 'vimeo', 'inhabitat.com', 'warwickonline', 'amazon', 'flipkart', 'webstories', 'canivera', 'tamil.asianet']
+    socials = ['instagram', 'facebook', 'youtube', 'vimeo', 'inhabitat.com', 'warwickonline', 'amazon', 'flipkart', 'webstories', 'canivera', 'tamil.asianet', 'hindiprocess']
     for key in socials:
         if key in url.lower():
             return True
@@ -135,31 +135,48 @@ def getYoutubeLinks(keyword, max, loc):
         
     return data[:max]
 
-def generate_docx(category, id, title, summary, sentiment, link, filename):
+def generate_docx(data, keyword):
 
-    id = str(category)+"_"+str(id)
-    document = Document()
+    # id = str(category)+"_"+str(id)
+    # document = Document()
     
-    document.add_paragraph(str(title))
-    document.add_picture(filename, width=Inches(7), height=Inches(5))
-    document.add_paragraph(link)
-    document.add_paragraph(summary)
-    document.add_paragraph(str(sentiment))
-    document.save(f"./reports/{id}.docx")
+    # document.add_paragraph(str(title))
+    # document.add_picture(filename, width=Inches(7), height=Inches(5))
+    # document.add_paragraph(link)
+    # document.add_paragraph(summary)
+    # document.add_paragraph(str(sentiment))
+    # document.save(f"./reports/{id}.docx")
+    document = Document()
+    global data_wc
+    # for i in data:
+        # print(i)
+        # print(type(i))
+    if float(data['sentiment']) <= 0.0:
+        print(data['summary'], data['sentiment'])
+        data['id'] = str(data['type'])+"_"+str(data['id'])
+        document.add_paragraph(str(data['title']))
+        document.add_picture(data['filename'], width=Inches(7), height=Inches(5))
+        document.add_paragraph(data['link'])
+        document.add_paragraph(data['summary'])
+        document.add_paragraph(str(data['sentiment']))
+        # document.add_page_break()
+        wc(keyword, data_wc)
+        document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
+        document.save(f"./reports/{str(data['id']) + keyword}.docx")
     
 def generateReport(data, keyword):
     document = Document()
     global data_wc
     for i in data:
-        # if float(i['sentiment']) <= 0.0:
-        print(i['summary'], i['sentiment'])
-        i['id'] = str(i['type'])+"_"+str(i['id'])
-        document.add_paragraph(str(i['title']))
-        # document.add_picture(i['filename'], width=Inches(7), height=Inches(5))
-        document.add_paragraph(i['link'])
-        document.add_paragraph(i['summary'])
-        document.add_paragraph(str(i['sentiment']))
-        document.add_page_break()
+        if float(i['sentiment']) <= 0.0:
+            print(i['summary'], i['sentiment'])
+            i['id'] = str(i['type'])+"_"+str(i['id'])
+            document.add_paragraph(str(i['title']))
+            document.add_picture(i['filename'], width=Inches(7), height=Inches(5))
+            document.add_paragraph(i['link'])
+            document.add_paragraph(i['summary'])
+            document.add_paragraph(str(i['sentiment']))
+            document.add_page_break()
         # else: continue
     wc(keyword, data_wc)
     document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))

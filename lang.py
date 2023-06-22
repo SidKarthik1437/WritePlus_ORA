@@ -39,7 +39,13 @@ def Summarizer(body):
     docs = [Document(page_content=t) for t in texts[:3]]
 
     chain = load_summarize_chain(llm, chain_type="map_reduce")
-    op = chain.run(docs)
+    try:
+        op = chain.run(docs)
+    except Exception as e:
+        print("Cannot summarize data: ", e)
+        
+        return body 
+        
 
     return(op)
 

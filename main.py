@@ -108,9 +108,11 @@ def News(keyword, loc, max):
                     data = getNewsData(id, res, news, keyword)
                     print("News Data Fetched")
                     # generate_docx(data['type'], str(id), data['title'], data['summary'], data['sentiment'], news, data['filename'])
-                    export.append({'type': data['type'],'id': str(id),'title': data['title'],'summary': data['summary'],'sentiment': data['sentiment'],'link': news,
+                    data = {'type': data['type'],'id': str(id),'title': data['title'],'summary': data['summary'],'sentiment': data['sentiment'],'link': news,
                     'filename': data['filename']
-                    })
+                    }
+                    generate_docx(data, keyword)
+                    export.append(data)
                 else: continue
             except KeyboardInterrupt:
                 exit(0)
@@ -118,7 +120,7 @@ def News(keyword, loc, max):
         return export
 
 def Youtube(keyword, max, loc):
-    with st.spinner('Analyzing Videos'):
+    # with st.spinner('Analyzing Videos'):
         yt = []
         print("Extracting Relavant Youtube Videos...")
         data = getYoutubeLinks(keyword, max, loc)
@@ -140,10 +142,11 @@ def Youtube(keyword, max, loc):
                     
                     
                 print("Youtube Data Fetched")
-                
-                yt.append({'type': data['type'],'id': str(id),'title': data['title'],'summary': data['summary'],'sentiment': data['sentiment'],'link': i.get('link'),
+                data = {'type': data['type'],'id': str(id),'title': data['title'],'summary': data['summary'],'sentiment': data['sentiment'],'link': i.get('link'),
                 'filename': data['filename']
-                })
+                }
+                generate_docx(data, keyword)
+                yt.append(data)
                 # generate_docx(data['type'], str(id), data['title'], data['summary'], data['sentiment'], i.get('link'), data['filename'])
                             
             except KeyboardInterrupt:
@@ -229,7 +232,8 @@ def newmain():
         
     loc = [i['country_name'] for i in loc_data]
     
-    keyword = input("Enter keyword: ")
+    keyword = "HDFC Bank Pushpal Roy"
+    # keyword = input("Enter keyword: ")
     loc = "India"
     max_news = 500
     max_videos = 100
