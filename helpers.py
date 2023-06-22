@@ -167,7 +167,11 @@ def generate_docx(data, keyword):
             document.add_paragraph(str(data['sentiment']))
             # document.add_page_break()
             wc(keyword, data_wc)
-            document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
+            try:
+                document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
+            except:
+                print("Cannot find screenshot")
+                pass
             document.save(f"./reports/{str(data['id']) + keyword}.docx")
     
 def generateReport(data, keyword):
@@ -191,7 +195,11 @@ def generateReport(data, keyword):
                 document.add_page_break()
         # else: continue
     wc(keyword, data_wc)
-    document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
+    try:
+        document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
+    except:
+        print("Cannot find screenshot")
+        pass
     document.save(f"./reports/{keyword}.docx")
     
 def generate_pdf(id, title, summary, sentiment, link, filename):
