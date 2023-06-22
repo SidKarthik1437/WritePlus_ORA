@@ -152,33 +152,43 @@ def generate_docx(data, keyword):
         # print(i)
         # print(type(i))
     sentiment_value = data['sentiment']
-    if sentiment_value and float(sentiment_value) <= 0.0:
-        print(data['summary'], data['sentiment'])
-        data['id'] = str(data['type'])+"_"+str(data['id'])
-        document.add_paragraph(str(data['title']))
-        document.add_picture(data['filename'], width=Inches(7), height=Inches(5))
-        document.add_paragraph(data['link'])
-        document.add_paragraph(data['summary'])
-        document.add_paragraph(str(data['sentiment']))
-        # document.add_page_break()
-        wc(keyword, data_wc)
-        document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
-        document.save(f"./reports/{str(data['id']) + keyword}.docx")
+    if sentiment_value :
+        try: 
+            senti = float(sentiment_value)
+        except: 
+            senti = 0.0
+        if senti <= 0.0:
+            print(data['summary'], data['sentiment'])
+            data['id'] = str(data['type'])+"_"+str(data['id'])
+            document.add_paragraph(str(data['title']))
+            document.add_picture(data['filename'], width=Inches(7), height=Inches(5))
+            document.add_paragraph(data['link'])
+            document.add_paragraph(data['summary'])
+            document.add_paragraph(str(data['sentiment']))
+            # document.add_page_break()
+            wc(keyword, data_wc)
+            document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
+            document.save(f"./reports/{str(data['id']) + keyword}.docx")
     
 def generateReport(data, keyword):
     document = Document()
     global data_wc
     for i in data:
         sentiment_value = i['sentiment']
-        if sentiment_value and float(sentiment_value) <= 0.0:
-            print(i['summary'], i['sentiment'])
-            i['id'] = str(i['type'])+"_"+str(i['id'])
-            document.add_paragraph(str(i['title']))
-            document.add_picture(i['filename'], width=Inches(7), height=Inches(5))
-            document.add_paragraph(i['link'])
-            document.add_paragraph(i['summary'])
-            document.add_paragraph(str(i['sentiment']))
-            document.add_page_break()
+        if sentiment_value :
+            try: 
+                senti = float(sentiment_value)
+            except: 
+                senti = 0.0
+            if senti <= 0.0:
+                print(i['summary'], i['sentiment'])
+                i['id'] = str(i['type'])+"_"+str(i['id'])
+                document.add_paragraph(str(i['title']))
+                document.add_picture(i['filename'], width=Inches(7), height=Inches(5))
+                document.add_paragraph(i['link'])
+                document.add_paragraph(i['summary'])
+                document.add_paragraph(str(i['sentiment']))
+                document.add_page_break()
         # else: continue
     wc(keyword, data_wc)
     document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
