@@ -1,46 +1,52 @@
-import requests
-import urllib
-import pandas as pd
-from requests_html import HTML
-from requests_html import HTMLSession
+import os
+from docx import Document
+import docx
+# from docx.enum.table import W
+from docx.shared import Pt
+from docx.shared import Inches
 
-def get_source(url):
-    """Return the source code for the provided URL. 
+folder_path = "./reports/"  # Replace with the actual folder path
+data = []
+# Iterate over the files in the folder
+for filename in os.listdir(folder_path):
+    if filename.endswith(".docx"):
+        file_path = os.path.join(folder_path, filename)
+        
+        # Load the DOCX document
+        doc = Document(file_path)
+        
+        # Extract the URL
+        url = doc.paragraphs[2].text  # Assuming the URL is always the third paragraph (index 2)
+        
+        # Extract the sentiment score
+        sentiment_score = doc.paragraphs[4].text # Assuming the sentiment score is always the last paragraph
+        
+        # Process the extracted data
+        print("File:", filename)
+        print("URL:", url)
+        print("Sentiment Score:", sentiment_score)
+        print("---")
+        data.append({
+            'url': url,
+            'sentiment_score': sentiment_score
+        })
 
-    Args: 
-        url (string): URL of the page to scrape.
+new_doc = Document()
+table = new_doc.add_table(rows=1, cols=3)
+table.style = "Table Grid"
+table.autofit = True
 
-    Returns:
-        response (object): HTTP response object from requests_html. 
-    """
+# Add table headers
+headers = ["SL No", "URL", "Sentiment Score"]
+for idx, header in enumerate(headers):
+    table.cell(0, idx).text = header
 
-    try:
-        session = HTMLSession()
-        response = session.get(url)
-        return response
+# Populate table with extracted data
+for idx, data in enumerate(data):
+    row = table.add_row().cells
+    row[0].text = str(idx + 1)
+    row[1].text = data['url']
+    row[2].text = str(data['sentiment_score'])
 
-    except requests.exceptions.RequestException as e:
-        print(e)
-
-
-def scrape_google(query):
-    
-    query = urllib.parse.quote_plus(query)
-    response = get_source("https://www.google.co.uk/search?q=" + query)
-
-    links = list(response.html.absolute_links)
-    google_domains = ('https://www.google.', 
-                      'https://google.', 
-                      'https://webcache.googleusercontent.', 
-                      'http://webcache.googleusercontent.', 
-                      'https://policies.google.',
-                      'https://support.google.',
-                      'https://maps.google.')
-
-    for url in links[:]:
-        if url.startswith(google_domains):
-            links.remove(url)
-
-    return links
-
-print(scrape_google("hdfc pushpal roy"))
+# Save the new document
+new_doc.save("./table.docx")

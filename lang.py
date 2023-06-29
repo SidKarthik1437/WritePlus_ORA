@@ -53,7 +53,7 @@ def ChatSummarizer(body):
     
     print("Analyzing News...")
     
-    template="""You are a helpful assistant that summarizes {text} and gives the sentiment polarity in the scale -1 to 1
+    template="""You are a helpful assistant that summarizes text and gives the sentiment polarity in the scale -1 to 1
     Format the output as JSON with the following keys:summary:string,polarity:float.
     """
     

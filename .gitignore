@@ -3,3 +3,4 @@ config.py
 /reports
 /wc
 /__pycache__
+/frontend

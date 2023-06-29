@@ -76,9 +76,6 @@ def getYtData(id, data, keyword):
         'filename': filename,
         'published': str(data.get('published'))
     }
-
-
-    
     
 def googleSearchResults(keyword, loc, max):
     
@@ -98,6 +95,7 @@ def News(keyword, loc, max):
         print("Fetching Google Search Results...")
         res = googleSearchResults(keyword, loc, max)
         print("Total Links Found: ", len(res))
+        # res = res[297:]
 
         for id, news in enumerate(res):
             print("Processing News: ", id)
@@ -111,7 +109,7 @@ def News(keyword, loc, max):
                     data = {'type': data['type'],'id': str(id),'title': data['title'],'summary': data['summary'],'sentiment': data['sentiment'],'link': news,
                     'filename': data['filename']
                     }
-                    generate_docx(data, keyword)
+                    # generate_docx(data, keyword)
                     export.append(data)
                 else: continue
             except KeyboardInterrupt:
@@ -145,7 +143,7 @@ def Youtube(keyword, max, loc):
                 data = {'type': data['type'],'id': str(id),'title': data['title'],'summary': data['summary'],'sentiment': data['sentiment'],'link': i.get('link'),
                 'filename': data['filename']
                 }
-                generate_docx(data, keyword)
+                # generate_docx(data, keyword)
                 yt.append(data)
                 # generate_docx(data['type'], str(id), data['title'], data['summary'], data['sentiment'], i.get('link'), data['filename'])
                             
@@ -226,17 +224,18 @@ def main():
         with open(filename, "rb") as fp:
             st.download_button(label='Download Report', data=fp, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", file_name=f"{keyword}.docx")
 
-def newmain():
+    
+def newmain(keyword, max_news, max_videos, loc):
     with open('./gl.json', 'r') as file:
         loc_data = json.load(file)
         
-    loc = [i['country_name'] for i in loc_data]
+    # loc = [i['country_name'] for i in loc_data]
     
-    keyword = "HDFC Bank Pushpal Roy"
-    # keyword = input("Enter keyword: ")
-    loc = "India"
-    max_news = 500
-    max_videos = 100
+    # # keyword = "HDFC Bank Pushpal Roy"
+    # # keyword = input("Enter keyword: ")
+    # loc = "India"
+    # max_news = 500
+    # max_videos = 100
     
     
     # filename="./reports/"+keyword.lower()+".docx"
@@ -251,13 +250,37 @@ def newmain():
         # with open("data.json", "w") as f:
         #     f.write(data)
         
-    generateReport(data, keyword)
+    file = generateReport(data, keyword)
+    return file
     # else: flag = True
     
+from flask import Flask, request, render_template, send_file
+from flask_cors import CORS, cross_origin
+app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+@app.route('/',methods=['POST'])
+@cross_origin()
+def getData():
     
+    data = request.get_json()
+    
+    print(data)
+    filepath = newmain(data['keyword'], data['maxSearch'], data['maxVideos'], data['loc'])
+    # with open("./reports/HDFC Bank Pushpal Roy.docx", "r") as file:
+    return send_file(
+        filepath,
+        mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        # as_attachment=True,
+    )
     
 
+
 if __name__ == "__main__":
-    newmain()
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=5000)
+    # app.run()
+    # newmain()
     # main()
     

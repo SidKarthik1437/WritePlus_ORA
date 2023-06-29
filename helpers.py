@@ -202,6 +202,8 @@ def generateReport(data, keyword):
         pass
     document.save(f"./reports/{keyword}.docx")
     
+    return (f"./reports/{keyword}.docx")
+    
 def generate_pdf(id, title, summary, sentiment, link, filename):
     # print("HEHEHEHE", summary)
     print("Generating PDF for News: ", id)

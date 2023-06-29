@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flask Form</title>
+</head>
+<body>
+    <h1>Flask Form</h1>
+
+    <form method="POST">
+        <label for="keyword">Keyword</label>
+        <input type="text" name="keyword" id="keyword" required><br>
+
+        <label for="gs">Google Search Results</label>
+        <input type="number" name="gs" id="gs" required><br>
+
+        <label for="ys">Youtube Search Results</label>
+        <input type="number" name="ys" id="ys" required><br>
+
+        <label for="loc">Select Location:</label>
+        <select name="loc" id="loc" required>
+            {% for country in countries %}
+                <option value="{{ country }}">{{ country }}</option>
+            {% endfor %}
+        </select><br>
+
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>

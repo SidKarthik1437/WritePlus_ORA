@@ -63,5 +63,5 @@ def extendedResults(keyword, country, num_results):
             print(i['link'])
             res.append(i['link'])
 
-    return res
+    return res[:num_results]
 
