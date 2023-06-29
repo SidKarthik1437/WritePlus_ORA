@@ -10,7 +10,7 @@ import regex as re
 from urllib.request import urlretrieve
 from urllib.parse import urlencode
 from youtube_transcript_api import YouTubeTranscriptApi
-
+import docx
 import json
 import streamlit as st
 import config
@@ -52,7 +52,7 @@ def is_biography_page(url):
 
 def is_socials(url):
     
-    socials = ['instagram', 'facebook', 'youtube', 'vimeo', 'inhabitat.com', 'warwickonline', 'amazon', 'flipkart', 'webstories', 'canivera', 'tamil.asianet', 'hindiprocess']
+    socials = ['instagram', 'facebook', 'youtube', 'vimeo', 'inhabitat.com', 'warwickonline', 'amazon', 'flipkart', 'webstories', 'canivera', 'tamil.asianet']
     for key in socials:
         if key in url.lower():
             return True
@@ -135,74 +135,84 @@ def getYoutubeLinks(keyword, max, loc):
         
     return data[:max]
 
-def generate_docx(data, keyword):
+def generate_docx(category, id, title, summary, sentiment, link, filename):
 
-    # id = str(category)+"_"+str(id)
-    # document = Document()
-    
-    # document.add_paragraph(str(title))
-    # document.add_picture(filename, width=Inches(7), height=Inches(5))
-    # document.add_paragraph(link)
-    # document.add_paragraph(summary)
-    # document.add_paragraph(str(sentiment))
-    # document.save(f"./reports/{id}.docx")
+    id = str(category)+"_"+str(id)
     document = Document()
-    global data_wc
-    # for i in data:
-        # print(i)
-        # print(type(i))
-    sentiment_value = data['sentiment']
-    if sentiment_value :
-        try: 
-            senti = float(sentiment_value)
-        except: 
-            senti = 0.0
-        if senti <= 0.0:
-            print(data['summary'], data['sentiment'])
-            data['id'] = str(data['type'])+"_"+str(data['id'])
-            document.add_paragraph(str(data['title']))
-            document.add_picture(data['filename'], width=Inches(7), height=Inches(5))
-            document.add_paragraph(data['link'])
-            document.add_paragraph(data['summary'])
-            document.add_paragraph(str(data['sentiment']))
-            # document.add_page_break()
-            wc(keyword, data_wc)
-            try:
-                document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
-            except:
-                print("Cannot find screenshot")
-                pass
-            document.save(f"./reports/{str(data['id']) + keyword}.docx")
+    document.add_paragraph(str(title))
+    document.add_picture(filename, width=Inches(7), height=Inches(5))
+    paragraph = document.add_paragraph()
+    add_hyperlink(paragraph, link)
+    document.add_paragraph(summary)
+    document.add_paragraph(str(sentiment))
+    document.save(f"./reports/{id}.docx")
+
+def add_hyperlink(paragraph, url):
+    # This gets access to the document.xml.rels file and gets a new relation id value
+    part = paragraph.part
+    r_id = part.relate_to(url, docx.opc.constants.RELATIONSHIP_TYPE.HYPERLINK, is_external=True)
+
+    # Create the w:hyperlink tag and add needed values
+    hyperlink = docx.oxml.shared.OxmlElement('w:hyperlink')
+    hyperlink.set(docx.oxml.shared.qn('r:id'), r_id, )
+
+    # Create a new run object (a wrapper over a 'w:r' element)
+    new_run = docx.text.run.Run(
+        docx.oxml.shared.OxmlElement('w:r'), paragraph)
+    new_run.text = url
+
+    # Set the run's style to the builtin hyperlink style, defining it if necessary
+    new_run.style = get_or_create_hyperlink_style(part.document)
+    # Alternatively, set the run's formatting explicitly
+    # new_run.font.color.rgb = docx.shared.RGBColor(0, 0, 255)
+    # new_run.font.underline = True
+
+    # Join all the xml elements together
+    hyperlink.append(new_run._element)
+    paragraph._p.append(hyperlink)
+    return hyperlink
+
+def get_or_create_hyperlink_style(d):
     
+    if "Hyperlink" not in d.styles:
+        if "Default Character Font" not in d.styles:
+            ds = d.styles.add_style("Default Character Font",
+                                    docx.enum.style.WD_STYLE_TYPE.CHARACTER,
+                                    True)
+            ds.element.set(docx.oxml.shared.qn('w:default'), "1")
+            ds.priority = 1
+            ds.hidden = True
+            ds.unhide_when_used = True
+            del ds
+        hs = d.styles.add_style("Hyperlink",
+                                docx.enum.style.WD_STYLE_TYPE.CHARACTER,
+                                True)
+        hs.base_style = d.styles["Default Character Font"]
+        hs.unhide_when_used = True
+        hs.font.color.rgb = docx.shared.RGBColor(0x05, 0x63, 0xC1)
+        hs.font.underline = True
+        del hs
+    #This is only needed if you're using the builtin style above
+
 def generateReport(data, keyword):
     document = Document()
     global data_wc
     for i in data:
-        sentiment_value = i['sentiment']
-        if sentiment_value :
-            try: 
-                senti = float(sentiment_value)
-            except: 
-                senti = 0.0
-            if senti <= 0.0:
-                print(i['summary'], i['sentiment'])
-                i['id'] = str(i['type'])+"_"+str(i['id'])
-                document.add_paragraph(str(i['title']))
-                document.add_picture(i['filename'], width=Inches(7), height=Inches(5))
-                document.add_paragraph(i['link'])
-                document.add_paragraph(i['summary'])
-                document.add_paragraph(str(i['sentiment']))
-                document.add_page_break()
+        # if float(i['sentiment']) <= 0.0:
+        print(i['summary'], i['sentiment'])
+        i['id'] = str(i['type'])+"_"+str(i['id'])
+        document.add_paragraph(str(i['title']))
+        document.add_picture(i['filename'], width=Inches(7), height=Inches(5))
+        # document.add_paragraph(i['link'])
+        paragraph = document.add_paragraph()
+        add_hyperlink(paragraph, i['link'])
+        document.add_paragraph(i['summary'])
+        document.add_paragraph(str(i['sentiment']))
+        document.add_page_break()
         # else: continue
     wc(keyword, data_wc)
-    try:
-        document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
-    except:
-        print("Cannot find screenshot")
-        pass
+    document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
     document.save(f"./reports/{keyword}.docx")
-    
-    return (f"./reports/{keyword}.docx")
     
 def generate_pdf(id, title, summary, sentiment, link, filename):
     # print("HEHEHEHE", summary)
