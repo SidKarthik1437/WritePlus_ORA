@@ -267,7 +267,7 @@ def getData():
     data = request.get_json()
     
     print(data)
-    filepath = newmain(data['keyword'], data['maxSearch'], data['maxVideos'], data['loc'])
+    filepath = newmain(data['keyword'], int(data['maxSearch']), int(data['maxVideos']), data['loc'])
     # with open("./reports/HDFC Bank Pushpal Roy.docx", "r") as file:
     return send_file(
         filepath,
@@ -280,7 +280,7 @@ def getData():
 if __name__ == "__main__":
     from waitress import serve
     serve(app, host="0.0.0.0", port=5000)
-    # app.run()
+    app.run(host="0.0.0.0", port=5000)
     # newmain()
     # main()
     

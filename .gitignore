@@ -4,3 +4,4 @@ config.py
 /wc
 /__pycache__
 /frontend
+.vercel

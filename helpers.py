@@ -214,6 +214,8 @@ def generateReport(data, keyword):
     document.add_picture(f'./wc/{keyword}.jpeg', width=Inches(7), height=Inches(5))
     document.save(f"./reports/{keyword}.docx")
     
+    return f"./reports/{keyword}.docx"
+    
 def generate_pdf(id, title, summary, sentiment, link, filename):
     # print("HEHEHEHE", summary)
     print("Generating PDF for News: ", id)
